@@ -4,7 +4,7 @@
  *   @author Bartek Przybylski
  *   @author David A. Velasco
  *   Copyright (C) 2011  Bartek Przybylski
- *   Copyright (C) 2015 ownCloud Inc.
+ *   Copyright (C) 2017 ownCloud GmbH.
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License version 2,
@@ -22,27 +22,9 @@
 
 package com.owncloud.android.syncadapter;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import org.apache.jackrabbit.webdav.DavException;
-
-import com.owncloud.android.R;
-import com.owncloud.android.authentication.AuthenticatorActivity;
-import com.owncloud.android.datamodel.FileDataStorageManager;
-import com.owncloud.android.datamodel.OCFile;
-import com.owncloud.android.lib.common.operations.RemoteOperationResult;
-import com.owncloud.android.operations.RefreshFolderOperation;
-import com.owncloud.android.operations.UpdateOCVersionOperation;
-import com.owncloud.android.lib.common.operations.RemoteOperationResult.ResultCode;
-import com.owncloud.android.lib.common.utils.Log_OC;
-import com.owncloud.android.ui.activity.ErrorsWhileCopyingHandlerActivity;
-
 import android.accounts.Account;
 import android.accounts.AccountsException;
+import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.AbstractThreadedSyncAdapter;
@@ -53,6 +35,27 @@ import android.content.Intent;
 import android.content.SyncResult;
 import android.os.Bundle;
 import android.support.v4.app.NotificationCompat;
+import android.support.v4.content.LocalBroadcastManager;
+import android.support.v4.util.Pair;
+
+import com.owncloud.android.R;
+import com.owncloud.android.authentication.AuthenticatorActivity;
+import com.owncloud.android.datamodel.FileDataStorageManager;
+import com.owncloud.android.datamodel.OCFile;
+import com.owncloud.android.lib.common.operations.RemoteOperationResult;
+import com.owncloud.android.lib.common.operations.RemoteOperationResult.ResultCode;
+import com.owncloud.android.lib.common.utils.Log_OC;
+import com.owncloud.android.operations.SyncCapabilitiesOperation;
+import com.owncloud.android.operations.SynchronizeFolderOperation;
+import com.owncloud.android.ui.activity.ErrorsWhileCopyingHandlerActivity;
+
+import org.apache.jackrabbit.webdav.DavException;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Implementation of {@link AbstractThreadedSyncAdapter} responsible for synchronizing 
@@ -82,8 +85,11 @@ public class FileSyncAdapter extends AbstractOwnCloudSyncAdapter {
     public static final String EXTRA_FOLDER_PATH = FileSyncAdapter.class.getName() +
             ".EXTRA_FOLDER_PATH";
     public static final String EXTRA_RESULT = FileSyncAdapter.class.getName() + ".EXTRA_RESULT";
-    
-    
+
+    private static final int MAX_REPEAT_COUNTER = 1;
+
+    private static final String FILE_SYNC_NOTIFICATION_CHANNEL_ID = "FILE_SYNC_NOTIFICATION_CHANNEL";
+
     /** Time stamp for the current synchronization process, used to distinguish fresh data */
     private long mCurrentSyncTime;
     
@@ -113,10 +119,9 @@ public class FileSyncAdapter extends AbstractOwnCloudSyncAdapter {
     /** {@link SyncResult} instance to return to the system when the synchronization finish */
     private SyncResult mSyncResult;
 
-    /** 'True' means that the server supports the share API */
-    private boolean mIsShareSupported;
-    
-    
+    /** To send broadcast messages not visible out of the app */
+    private LocalBroadcastManager mLocalBroadcastManager;
+
     /**
      * Creates a {@link FileSyncAdapter}
      *
@@ -151,10 +156,12 @@ public class FileSyncAdapter extends AbstractOwnCloudSyncAdapter {
         mLastFailedResult = null;
         mConflictsFound = 0;
         mFailsInFavouritesFound = 0;
-        mForgottenLocalFiles = new HashMap<String, String>();
+        mForgottenLocalFiles = new HashMap<>();
         mSyncResult = syncResult;
         mSyncResult.fullSyncRequested = false;
         mSyncResult.delayUntil = (System.currentTimeMillis()/1000) + 3*60*60; // avoid too many automatic synchronizations
+
+        mLocalBroadcastManager = LocalBroadcastManager.getInstance(getContext());
 
         this.setAccount(account);
         this.setContentProviderClient(providerClient);
@@ -162,29 +169,23 @@ public class FileSyncAdapter extends AbstractOwnCloudSyncAdapter {
         
         try {
             this.initClientForCurrentAccount();
-        } catch (IOException e) {
-            /// the account is unknown for the Synchronization Manager, unreachable this context,
-            // or can not be authenticated; don't try this again
-            mSyncResult.tooManyRetries = true;
-            notifyFailedSynchronization();
-            return;
-        } catch (AccountsException e) {
+        } catch (IOException | AccountsException e) {
             /// the account is unknown for the Synchronization Manager, unreachable this context,
             // or can not be authenticated; don't try this again
             mSyncResult.tooManyRetries = true;
             notifyFailedSynchronization();
             return;
         }
-        
+
         Log_OC.d(TAG, "Synchronization of ownCloud account " + account.name + " starting");
         sendLocalBroadcast(EVENT_FULL_SYNC_START, null, null);  // message to signal the start
                                                                 // of the synchronization to the UI
         
         try {
-            updateOCVersion();
+            updateCapabilities();
             mCurrentSyncTime = System.currentTimeMillis();
             if (!mCancellation) {
-                synchronizeFolder(getStorageManager().getFileByPath(OCFile.ROOT_PATH));
+                synchronizeFolder(getStorageManager().getFileByPath(OCFile.ROOT_PATH), false);
                 
             } else {
                 Log_OC.d(TAG, "Leaving synchronization before synchronizing the root folder " +
@@ -225,7 +226,7 @@ public class FileSyncAdapter extends AbstractOwnCloudSyncAdapter {
      * locally saved. 
      * 
      * See {@link #onPerformSync(Account, Bundle, String, ContentProviderClient, SyncResult)}
-     * and {@link #synchronizeFolder(OCFile)}.
+     * and {@link #synchronizeFolder(OCFile, boolean)}.
      */
     @Override
     public void onSyncCanceled() {
@@ -236,19 +237,17 @@ public class FileSyncAdapter extends AbstractOwnCloudSyncAdapter {
     
     
     /**
-     * Updates the locally stored version value of the ownCloud server
+     * Updates the local copy of capabilities information of the ownCloud server
      */
-    private void updateOCVersion() {
-        UpdateOCVersionOperation update = new UpdateOCVersionOperation(getAccount(), getContext());
-        RemoteOperationResult result = update.execute(getClient());
+    private void updateCapabilities() {
+        SyncCapabilitiesOperation getCapabilities = new SyncCapabilitiesOperation();
+        RemoteOperationResult  result = getCapabilities.execute(getStorageManager(), getContext());
         if (!result.isSuccess()) {
-            mLastFailedResult = result; 
-        } else {
-            mIsShareSupported = update.getOCVersion().isSharedSupported();
+            mLastFailedResult = result;
         }
     }
-    
-    
+
+
     /**
      *  Synchronizes the list of files contained in a folder identified with its remote path.
      *  
@@ -259,25 +258,36 @@ public class FileSyncAdapter extends AbstractOwnCloudSyncAdapter {
      *  depth first strategy. 
      * 
      *  @param folder                   Folder to synchronize.
+     *  @param pushOnly                 When 'true', it's assumed that the folder did not change in the
+     *                                  server, so data will not be fetched. Only local changes of
+     *                                  available offline files will be pushed.
      */
-    private void synchronizeFolder(OCFile folder) {
+    private void synchronizeFolder(OCFile folder, boolean pushOnly) {
         
         if (mFailedResultsCounter > MAX_FAILED_RESULTS || isFinisher(mLastFailedResult))
             return;
         
         // folder synchronization
-        RefreshFolderOperation synchFolderOp = new RefreshFolderOperation( folder,
-                                                                                   mCurrentSyncTime,
-                                                                                   true,
-                                                                                   mIsShareSupported,
-                                                                                   false,
-                                                                                   getStorageManager(),
-                                                                                   getAccount(),
-                                                                                   getContext()
-                                                                                  );
-        RemoteOperationResult result = synchFolderOp.execute(getClient());
-        
-        
+        SynchronizeFolderOperation synchFolderOp = new SynchronizeFolderOperation(
+            getContext(),
+            folder.getRemotePath(),
+            getAccount(),
+            mCurrentSyncTime,
+            pushOnly,
+            true,       // sync full account
+            false       // only sync contents of available offline files
+        );
+
+        RemoteOperationResult result;
+        boolean repeat;
+        int repeatCounter = 0;
+        do {
+            repeat = false;
+
+            result = synchFolderOp.execute(getClient(), getStorageManager());
+
+        } while (repeat);
+
         // synchronized folder -> notice to UI - ALWAYS, although !result.isSuccess
         sendLocalBroadcast(EVENT_FULL_SYNC_FOLDER_CONTENTS_SYNCED, folder.getRemotePath(), result);
         
@@ -286,16 +296,16 @@ public class FileSyncAdapter extends AbstractOwnCloudSyncAdapter {
             
             if (result.getCode() == ResultCode.SYNC_CONFLICT) {
                 mConflictsFound += synchFolderOp.getConflictsFound();
-                mFailsInFavouritesFound += synchFolderOp.getFailsInFavouritesFound();
+                mFailsInFavouritesFound += synchFolderOp.getFailsInFileSyncsFound();
             }
             if (synchFolderOp.getForgottenLocalFiles().size() > 0) {
                 mForgottenLocalFiles.putAll(synchFolderOp.getForgottenLocalFiles());
             }
             if (result.isSuccess()) {
                 // synchronize children folders 
-                List<OCFile> children = synchFolderOp.getChildren();
+                List<Pair<OCFile, Boolean>> children = synchFolderOp.getFoldersToVisit();
                 // beware of the 'hidden' recursion here!
-                syncChildren(children);
+                syncSubfolders(children);
             }
             
         } else if (result.getCode() != ResultCode.FILE_NOT_FOUND) {
@@ -332,7 +342,10 @@ public class FileSyncAdapter extends AbstractOwnCloudSyncAdapter {
             return (code.equals(RemoteOperationResult.ResultCode.SSL_ERROR) ||
                     code.equals(RemoteOperationResult.ResultCode.SSL_RECOVERABLE_PEER_UNVERIFIED) ||
                     code.equals(RemoteOperationResult.ResultCode.BAD_OC_VERSION) ||
-                    code.equals(RemoteOperationResult.ResultCode.INSTANCE_NOT_CONFIGURED));
+                    code.equals(RemoteOperationResult.ResultCode.INSTANCE_NOT_CONFIGURED) ||
+                    code.equals(ResultCode.ACCOUNT_NOT_FOUND) ||
+                    code.equals(ResultCode.ACCOUNT_EXCEPTION)
+            );
         }
         return false;
     }
@@ -340,24 +353,32 @@ public class FileSyncAdapter extends AbstractOwnCloudSyncAdapter {
     /**
      * Triggers the synchronization of any folder contained in the list of received files.
      *
-     * No consideration of etag here because it MUST walk down anyway, in case that kept-in-sync files
-     * have local changes.
-     * 
-     * @param files         Files to recursively synchronize.
+     * Every subfolder comes with a boolean flag, set to true if the previous sync operation detected
+     * that there are pending changes in the file.
+     *
+     * Only folders that have pending changes in the server will be sync'd here.
+     *
+     * @param folders       Subfolders to recursively synchronize, with boolean value signaling if there are pending
+     *                      changes to sync in the server.
      */
-    private void syncChildren(List<OCFile> files) {
+    private void syncSubfolders(List<Pair<OCFile, Boolean>> folders) {
         int i;
-        OCFile newFile;
-        for (i=0; i < files.size() && !mCancellation; i++) {
-            newFile = files.get(i);
-            if (newFile.isFolder()) {
-                synchronizeFolder(newFile);
+        Pair<OCFile, Boolean> pair;
+        for (i=0; i < folders.size() && !mCancellation; i++) {
+            pair = folders.get(i);
+            if (pair.first.isFolder()) {
+                synchronizeFolder(pair.first, !pair.second);
             }
         }
        
-        if (mCancellation && i <files.size()) Log_OC.d(TAG,
-                "Leaving synchronization before synchronizing " + files.get(i).getRemotePath() +
-                        " due to cancelation request");
+        if (mCancellation && i <folders.size()) {
+            Log_OC.d(
+                TAG,
+                "Leaving synchronization before synchronizing " +
+                    folders.get(i).first.getRemotePath() +
+                    " due to cancelation request"
+            );
+        }
     }
 
     
@@ -367,7 +388,7 @@ public class FileSyncAdapter extends AbstractOwnCloudSyncAdapter {
      * 
      * @param event             Event in the process of synchronization to be notified.   
      * @param dirRemotePath     Remote path of the folder target of the event occurred.
-     * @param result            Result of an individual {@ SynchronizeFolderOperation},
+     * @param result            Result of an individual folder synchronization,
      *                          if completed; may be null.
      */
     private void sendLocalBroadcast(String event, String dirRemotePath,
@@ -381,8 +402,7 @@ public class FileSyncAdapter extends AbstractOwnCloudSyncAdapter {
         if (result != null) {
             intent.putExtra(FileSyncAdapter.EXTRA_RESULT, result);
         }
-        getContext().sendStickyBroadcast(intent);
-        //LocalBroadcastManager.getInstance(getContext()).sendBroadcast(intent);
+        mLocalBroadcastManager.sendBroadcast(intent);
     }
 
     
@@ -479,8 +499,8 @@ public class FileSyncAdapter extends AbstractOwnCloudSyncAdapter {
         /// includes a pending intent in the notification showing a more detailed explanation
         Intent explanationIntent = new Intent(getContext(), ErrorsWhileCopyingHandlerActivity.class);
         explanationIntent.putExtra(ErrorsWhileCopyingHandlerActivity.EXTRA_ACCOUNT, getAccount());
-        ArrayList<String> remotePaths = new ArrayList<String>();
-        ArrayList<String> localPaths = new ArrayList<String>();
+        ArrayList<String> remotePaths = new ArrayList<>();
+        ArrayList<String> localPaths = new ArrayList<>();
         remotePaths.addAll(mForgottenLocalFiles.keySet());
         localPaths.addAll(mForgottenLocalFiles.values());
         explanationIntent.putExtra(ErrorsWhileCopyingHandlerActivity.EXTRA_LOCAL_PATHS, localPaths);
@@ -501,7 +521,7 @@ public class FileSyncAdapter extends AbstractOwnCloudSyncAdapter {
     /**
      * Creates a notification builder with some commonly used settings
      * 
-     * @return
+     * @return a notification builder with some commonly used settings.
      */
     private NotificationCompat.Builder createNotificationBuilder() {
         NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(getContext());
@@ -513,18 +533,40 @@ public class FileSyncAdapter extends AbstractOwnCloudSyncAdapter {
     /**
      * Builds and shows the notification
      * 
-     * @param id
-     * @param builder
+     * @param id            Id for the notification to build.
+     * @param builder       Notification builder, already set up.
      */
     private void showNotification(int id, NotificationCompat.Builder builder) {
-        ((NotificationManager) getContext().getSystemService(Context.NOTIFICATION_SERVICE))
-            .notify(id, builder.build());
+
+        NotificationManager mNotificationManager = ((NotificationManager) getContext().
+                getSystemService(Context.NOTIFICATION_SERVICE));
+
+        // Configure notification channel
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+            NotificationChannel mNotificationChannel;
+            // The user-visible name of the channel.
+            CharSequence name = getContext().getString(R.string.file_sync_notification_channel_name);
+            // The user-visible description of the channel.
+            String description = getContext().getString(R.string.
+                    file_sync_notification_channel_description);
+            // Set importance low: show the notification everywhere but with no sound
+            int importance = NotificationManager.IMPORTANCE_LOW;
+            mNotificationChannel = new NotificationChannel(FILE_SYNC_NOTIFICATION_CHANNEL_ID,
+                    name, importance);
+            // Configure the notification channel.
+            mNotificationChannel.setDescription(description);
+            mNotificationManager.createNotificationChannel(mNotificationChannel);
+        }
+
+        builder.setChannelId(FILE_SYNC_NOTIFICATION_CHANNEL_ID);
+
+        mNotificationManager.notify(id, builder.build());
     }
     /**
      * Shorthand translation
      * 
-     * @param key
-     * @param args
+     * @param key       String key.
+     * @param args      Arguments to replace in a formatted string.
      * @return
      */
     private String i18n(int key, Object... args) {

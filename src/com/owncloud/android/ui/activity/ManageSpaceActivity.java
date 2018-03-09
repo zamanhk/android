@@ -2,7 +2,7 @@
  *   ownCloud Android client application
  *
  *   @author masensio
- *   Copyright (C) 2016 ownCloud Inc.
+ *   Copyright (C) 2016 ownCloud GmbH.
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License version 2,
@@ -24,13 +24,13 @@ import android.content.SharedPreferences;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
+import android.support.design.widget.Snackbar;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.owncloud.android.R;
 import com.owncloud.android.lib.common.utils.Log_OC;
@@ -68,15 +68,16 @@ public class ManageSpaceActivity extends AppCompatActivity {
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        super.onOptionsItemSelected(item);
+        boolean retval = true;
         switch (item.getItemId()) {
             case android.R.id.home:
                 finish();
-                return true;
+                break;
             default:
                 Log_OC.w(TAG, "Unknown menu item triggered");
-                return false;
+                retval =  super.onOptionsItemSelected(item);
         }
+        return retval;
     }
 
     /**
@@ -94,6 +95,7 @@ public class ManageSpaceActivity extends AppCompatActivity {
                     .getDefaultSharedPreferences(getApplicationContext());
 
             boolean passCodeEnable = appPrefs.getBoolean(PassCodeActivity.PREFERENCE_SET_PASSCODE, false);
+            boolean patternEnabled = appPrefs.getBoolean(PatternLockActivity.PREFERENCE_SET_PATTERN,false);
 
             String passCodeDigits[] = new String[4];
             if (passCodeEnable) {
@@ -101,6 +103,10 @@ public class ManageSpaceActivity extends AppCompatActivity {
                 passCodeDigits[1] = appPrefs.getString(PassCodeActivity.PREFERENCE_PASSCODE_D2, null);
                 passCodeDigits[2] = appPrefs.getString(PassCodeActivity.PREFERENCE_PASSCODE_D3, null);
                 passCodeDigits[3] = appPrefs.getString(PassCodeActivity.PREFERENCE_PASSCODE_D4, null);
+            }
+            String patternValue = new String();
+            if(patternEnabled){
+                patternValue = appPrefs.getString(PatternLockActivity.KEY_PATTERN,null);
             }
 
             // Clear data
@@ -120,8 +126,12 @@ public class ManageSpaceActivity extends AppCompatActivity {
                 appPrefsEditor.putString(PassCodeActivity.PREFERENCE_PASSCODE_D3, passCodeDigits[2]);
                 appPrefsEditor.putString(PassCodeActivity.PREFERENCE_PASSCODE_D4, passCodeDigits[3]);
             }
+            if(patternEnabled){
+                appPrefsEditor.putString(PatternLockActivity.KEY_PATTERN,patternValue);
+            }
 
             appPrefsEditor.putBoolean(PassCodeActivity.PREFERENCE_SET_PASSCODE, passCodeEnable);
+            appPrefsEditor.putBoolean(PatternLockActivity.PREFERENCE_SET_PATTERN,patternEnabled);
             result = result && appPrefsEditor.commit();
 
             return result;
@@ -131,9 +141,13 @@ public class ManageSpaceActivity extends AppCompatActivity {
         protected void onPostExecute(Boolean result) {
             super.onPostExecute(result);
             if (!result) {
-                Toast.makeText(getApplicationContext(),
-                        getString(R.string.manage_space_clear_data),
-                        Toast.LENGTH_LONG).show();
+                Snackbar snackbar = Snackbar.make(
+                        findViewById(android.R.id.content),
+                        R.string.manage_space_clear_data,
+                        Snackbar.LENGTH_LONG
+                );
+                snackbar.show();
+
             } else {
                 finish();
                 System.exit(0);

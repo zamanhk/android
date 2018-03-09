@@ -1,7 +1,7 @@
 /**
  *   ownCloud Android client application
  *
- *   Copyright (C) 2015 ownCloud Inc.
+ *   Copyright (C) 2016 ownCloud GmbH.
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License version 2,
@@ -32,25 +32,24 @@ import android.content.Intent;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.support.design.widget.Snackbar;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentTransaction;
-import android.support.v7.app.AppCompatActivity;
+import android.support.v4.content.FileProvider;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.owncloud.android.R;
 import com.owncloud.android.lib.common.utils.Log_OC;
 import com.owncloud.android.ui.dialog.LoadingDialog;
-import com.owncloud.android.utils.DisplayUtils;
 import com.owncloud.android.utils.FileStorageUtils;
 
 
-public class LogHistoryActivity extends AppCompatActivity {
+public class LogHistoryActivity extends ToolbarActivity {
 
     private static final String MAIL_ATTACHMENT_TYPE = "text/plain";
 
@@ -70,6 +69,8 @@ public class LogHistoryActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
 
         setContentView(R.layout.log_send_file);
+        setupToolbar();
+
         setTitle(getText(R.string.actionbar_logger));
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         Button deleteHistoryButton = (Button) findViewById(R.id.deleteLogHistoryButton);
@@ -115,15 +116,15 @@ public class LogHistoryActivity extends AppCompatActivity {
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        super.onOptionsItemSelected(item);
+        boolean retval = true;
         switch (item.getItemId()) {
             case android.R.id.home:
                 finish();
                 break;
             default:
-                return false;
+                retval = super.onOptionsItemSelected(item);
         }
-        return true;
+        return retval;
     }
 
 
@@ -152,7 +153,11 @@ public class LogHistoryActivity extends AppCompatActivity {
         {
             File logFile = new File(mLogPath, file);
             if (logFile.exists()) {
-                uris.add(Uri.fromFile(logFile));
+
+                Uri mExposedLogFileUri = FileProvider.getUriForFile(this, this.
+                        getString(R.string.file_provider_authority), logFile);
+
+                uris.add(mExposedLogFileUri);
             }
         }
 
@@ -167,7 +172,12 @@ public class LogHistoryActivity extends AppCompatActivity {
         try {
             startActivity(intent);
         } catch (ActivityNotFoundException e) {
-            Toast.makeText(this, getString(R.string.log_send_no_mail_app), Toast.LENGTH_LONG).show();
+            Snackbar snackbar = Snackbar.make(
+                findViewById(android.R.id.content),
+                R.string.log_send_no_mail_app,
+                Snackbar.LENGTH_LONG
+            );
+            snackbar.show();
             Log_OC.i(TAG, "Could not find app for sending log history.");
         }
 
@@ -252,9 +262,7 @@ public class LogHistoryActivity extends AppCompatActivity {
      */
     public void showLoadingDialog() {
         // Construct dialog
-        LoadingDialog loading = new LoadingDialog(
-                getResources().getString(R.string.log_progress_dialog_text)
-        );
+        LoadingDialog loading = LoadingDialog.newInstance(R.string.log_progress_dialog_text, false);
         FragmentManager fm = getSupportFragmentManager();
         FragmentTransaction ft = fm.beginTransaction();
         loading.show(ft, DIALOG_WAIT_TAG);

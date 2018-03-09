@@ -3,7 +3,7 @@
  *
  *   @author masensio
  *   @author David A. Velasco
- *   Copyright (C) 2015 ownCloud Inc.
+ *   Copyright (C) 2016 ownCloud GmbH.
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License version 2,
@@ -26,17 +26,22 @@ import android.content.Context;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
+import android.os.Environment;
 
 import com.owncloud.android.authentication.PassCodeManager;
+import com.owncloud.android.authentication.PatternManager;
 import com.owncloud.android.datamodel.ThumbnailsCacheManager;
 import com.owncloud.android.lib.common.OwnCloudClientManagerFactory;
 import com.owncloud.android.lib.common.OwnCloudClientManagerFactory.Policy;
+import com.owncloud.android.lib.common.authentication.oauth.OAuth2ClientConfiguration;
+import com.owncloud.android.lib.common.authentication.oauth.OAuth2ProvidersRegistry;
+import com.owncloud.android.lib.common.authentication.oauth.OwnCloudOAuth2Provider;
 import com.owncloud.android.lib.common.utils.Log_OC;
 
 
 /**
  * Main Application of the project
- * 
+ *
  * Contains methods to build the "static" strings. These strings were before constants in different
  * classes
  */
@@ -57,31 +62,54 @@ public class MainApp extends Application {
     // TODO better place
     // private static boolean mOnlyOnDevice = false;
 
-    
+    public static String BUILD_TYPE_BETA = "beta";
+
     public void onCreate(){
         super.onCreate();
         MainApp.mContext = getApplicationContext();
-        
+
         boolean isSamlAuth = AUTH_ON.equals(getString(R.string.auth_method_saml_web_sso));
 
         OwnCloudClientManagerFactory.setUserAgent(getUserAgent());
         if (isSamlAuth) {
             OwnCloudClientManagerFactory.setDefaultPolicy(Policy.SINGLE_SESSION_PER_ACCOUNT);
         } else {
-            OwnCloudClientManagerFactory.setDefaultPolicy(Policy.ALWAYS_NEW_CLIENT);
+            OwnCloudClientManagerFactory.setDefaultPolicy(
+                    Policy.SINGLE_SESSION_PER_ACCOUNT_IF_SERVER_SUPPORTS_SERVER_MONITORING
+            );
         }
+
+        OwnCloudOAuth2Provider oauth2Provider = new OwnCloudOAuth2Provider();
+        oauth2Provider.setAuthorizationCodeEndpointPath(
+                getString(R.string.oauth2_url_endpoint_auth)
+        );
+        oauth2Provider.setAccessTokenEndpointPath(
+                getString(R.string.oauth2_url_endpoint_access)
+        );
+        oauth2Provider.setClientConfiguration(
+                new OAuth2ClientConfiguration(
+                        getString(R.string.oauth2_client_id),
+                        getString(R.string.oauth2_client_secret),
+                        getString(R.string.oauth2_redirect_uri)
+                )
+        );
+
+        OAuth2ProvidersRegistry.getInstance().registerProvider(
+                OwnCloudOAuth2Provider.NAME,
+                oauth2Provider
+        );
 
         // initialise thumbnails cache on background thread
         new ThumbnailsCacheManager.InitDiskCacheTask().execute();
-        
-        if (BuildConfig.DEBUG) {
+
+        if (BuildConfig.DEBUG || BuildConfig.BUILD_TYPE.equals(BUILD_TYPE_BETA)) {
 
             String dataFolder = getDataFolder();
 
             // Set folder for store logs
             Log_OC.setLogDataFolder(dataFolder);
 
-            Log_OC.startLogging();
+            Log_OC.startLogging(Environment.getExternalStorageDirectory().getAbsolutePath());
             Log_OC.d("Debug", "start logging");
         }
 
@@ -92,12 +120,14 @@ public class MainApp extends Application {
             public void onActivityCreated(Activity activity, Bundle savedInstanceState) {
                 Log_OC.d(activity.getClass().getSimpleName(),  "onCreate(Bundle) starting" );
                 PassCodeManager.getPassCodeManager().onActivityCreated(activity);
+                PatternManager.getPatternManager().onActivityCreated(activity);
             }
 
             @Override
             public void onActivityStarted(Activity activity) {
                 Log_OC.d(activity.getClass().getSimpleName(),  "onStart() starting" );
                 PassCodeManager.getPassCodeManager().onActivityStarted(activity);
+                PatternManager.getPatternManager().onActivityStarted(activity);
             }
 
             @Override
@@ -114,6 +144,7 @@ public class MainApp extends Application {
             public void onActivityStopped(Activity activity) {
                 Log_OC.d(activity.getClass().getSimpleName(), "onStop() ending" );
                 PassCodeManager.getPassCodeManager().onActivityStopped(activity);
+                PatternManager.getPatternManager().onActivityStopped(activity);
             }
 
             @Override
@@ -132,45 +163,35 @@ public class MainApp extends Application {
         return MainApp.mContext;
     }
 
-    // Methods to obtain Strings referring app_name 
-    //   From AccountAuthenticator 
-    //   public static final String ACCOUNT_TYPE = "owncloud";    
+    /**
+     * Next methods give access in code to some constants that need to be defined in string resources to be referred
+     * in AndroidManifest.xml file or other xml resource files; or that need to be easy to modify in build time.
+     */
+
     public static String getAccountType() {
         return getAppContext().getResources().getString(R.string.account_type);
     }
 
-    //  From AccountAuthenticator 
-    //  public static final String AUTHORITY = "org.owncloud";
     public static String getAuthority() {
         return getAppContext().getResources().getString(R.string.authority);
     }
-    
-    //  From AccountAuthenticator
-    //  public static final String AUTH_TOKEN_TYPE = "org.owncloud";
+
     public static String getAuthTokenType() {
         return getAppContext().getResources().getString(R.string.authority);
     }
-    
-    //  From ProviderMeta 
-    //  public static final String DB_FILE = "owncloud.db";
+
     public static String getDBFile() {
         return getAppContext().getResources().getString(R.string.db_file);
     }
-    
-    //  From ProviderMeta
-    //  private final String mDatabaseName = "ownCloud";
+
     public static String getDBName() {
         return getAppContext().getResources().getString(R.string.db_name);
     }
-     
-    /**
-     * name of data_folder, e.g., "owncloud"
-     */
+
     public static String getDataFolder() {
         return getAppContext().getResources().getString(R.string.data_folder);
     }
-    
-    // log_name
+
     public static String getLogName() {
         return getAppContext().getResources().getString(R.string.log_name);
     }
@@ -190,7 +211,7 @@ public class MainApp extends Application {
         String packageName = getAppContext().getPackageName();
         String version = "";
 
-        PackageInfo pInfo = null;
+        PackageInfo pInfo;
         try {
             pInfo = getAppContext().getPackageManager().getPackageInfo(packageName, 0);
             if (pInfo != null) {
@@ -201,8 +222,6 @@ public class MainApp extends Application {
         }
 
         // Mozilla/5.0 (Android) ownCloud-android/1.7.0
-        String userAgent = String.format(appString, version);
-
-        return userAgent;
+        return String.format(appString, version);
     }
 }

@@ -1,25 +1,29 @@
 /**
- * ownCloud Android client application
+ *   ownCloud Android client application
  *
- * @author David A. Velasco
- * Copyright (C) 2011  Bartek Przybylski
- * Copyright (C) 2015 ownCloud Inc.
- * <p/>
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 2,
- * as published by the Free Software Foundation.
- * <p/>
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- * <p/>
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *   @author David A. Velasco
+ *   Copyright (C) 2011  Bartek Przybylski
+ *   Copyright (C) 2016 ownCloud GmbH.
+ *
+ *   This program is free software: you can redistribute it and/or modify
+ *   it under the terms of the GNU General Public License version 2,
+ *   as published by the Free Software Foundation.
+ *
+ *   This program is distributed in the hope that it will be useful,
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *   GNU General Public License for more details.
+ *
+ *   You should have received a copy of the GNU General Public License
+ *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
  */
 package com.owncloud.android.ui.fragment;
 
-import android.app.Activity;
+import java.io.File;
+import java.util.ArrayList;
+
+import android.content.Context;
 import android.os.Bundle;
 import android.os.Environment;
 import android.util.SparseBooleanArray;
@@ -32,16 +36,13 @@ import com.owncloud.android.R;
 import com.owncloud.android.lib.common.utils.Log_OC;
 import com.owncloud.android.ui.adapter.LocalFileListAdapter;
 
-import java.io.File;
-import java.util.ArrayList;
-
 
 /**
  * A Fragment that lists all files and folders in a given LOCAL path.
  */
 public class LocalFileListFragment extends ExtendedListFragment {
-    private static final String TAG = "LocalFileListFragment";
-
+    private static final String TAG = LocalFileListFragment.class.getName();
+    
     /** Reference to the Activity which this fragment is attached to. For callbacks */
     private LocalFileListFragment.ContainerActivity mContainerActivity;
 
@@ -51,16 +52,32 @@ public class LocalFileListFragment extends ExtendedListFragment {
     /** Adapter to connect the data from the directory with the View object */
     private LocalFileListAdapter mAdapter = null;
 
+
+    /**
+     * Public factory method to create new {@link LocalFileListFragment} instances.
+     *
+     * @param   justFolders     When 'true', only folders will be shown to the user, not files
+     * @return                  New fragment with arguments set
+     */
+    public static LocalFileListFragment newInstance(boolean justFolders) {
+        LocalFileListFragment frag = new LocalFileListFragment();
+        Bundle args = new Bundle();
+        args.putBoolean(ARG_JUST_FOLDERS, justFolders);
+        frag.setArguments(args);
+        return frag;
+    }
+
+
     /**
      * {@inheritDoc}
      */
     @Override
-    public void onAttach(Activity activity) {
-        super.onAttach(activity);
+    public void onAttach(Context context) {
+        super.onAttach(context);
         try {
-            mContainerActivity = (ContainerActivity) activity;
+            mContainerActivity = (ContainerActivity) context;
         } catch (ClassCastException e) {
-            throw new ClassCastException(activity.toString() + " must implement " +
+            throw new ClassCastException(context.toString() + " must implement " +
                     LocalFileListFragment.ContainerActivity.class.getSimpleName());
         }
     }
@@ -76,7 +93,11 @@ public class LocalFileListFragment extends ExtendedListFragment {
         //setChoiceMode(ListView.CHOICE_MODE_MULTIPLE);
         setSwipeEnabled(false); // Disable pull-to-refresh
         setFabEnabled(false); // Disable FAB
-        setMessageForEmptyList(getString(R.string.local_file_list_empty));
+        setMessageForEmptyList(
+            isShowingJustFolders() ?
+                getString(R.string.local_file_list_empty_just_folders):
+                getString(R.string.local_file_list_empty)
+        );
         Log_OC.i(TAG, "onCreateView() end");
         return v;
     }
@@ -90,43 +111,52 @@ public class LocalFileListFragment extends ExtendedListFragment {
         Log_OC.i(TAG, "onActivityCreated() start");
 
         super.onActivityCreated(savedInstanceState);
-        mAdapter = new LocalFileListAdapter(mContainerActivity.getInitialDirectory(), getActivity());
+        mAdapter = new LocalFileListAdapter(mDirectory, isShowingJustFolder(), getActivity());
         setListAdapter(mAdapter);
 
         Log_OC.i(TAG, "onActivityCreated() stop");
     }
 
+    @Override
+    public void onResume() {
+        Log_OC.d(TAG, "onResume() start");
+        super.onResume();
+        listFolder();
+        Log_OC.d(TAG, "onResume() end");
+    }
+
     /**
-     * Call this, when the user presses the up button
+     * Browse up to the parent folder of the current one.
      */
     public void onNavigateUp() {
         File parentDir = null;
         if (mDirectory != null) {
             parentDir = mDirectory.getParentFile();  // can be null
         }
-        listDirectory(parentDir);
+        listFolder(parentDir);
     }
 
     /**
      * Use this to query the {@link File} object for the directory
      * that is currently being displayed by this fragment
-     *
+     * 
      * @return File     The currently displayed directory
      */
-    public File getCurrentDirectory() {
+    public File getCurrentFolder(){
         return mDirectory;
     }
 
 
     /**
-     * Calls {@link LocalFileListFragment#listDirectory(File)} with a null parameter
+     * Calls {@link LocalFileListFragment#listFolder(File)} with a null parameter
      * to refresh the current directory.
      */
-    public void listDirectory() {
-        listDirectory(null);
+
+    public void listFolder() {
+        listFolder(null);
     }
-
-
+    
+    
     /**
      * Lists the given directory on the view. When the input parameter is null,
      * it will either refresh the last known directory. list the root
@@ -134,8 +164,8 @@ public class LocalFileListFragment extends ExtendedListFragment {
      *
      * @param directory     Directory to be listed
      */
-    public void listDirectory(File directory) {
-
+    public void listFolder(File directory) {
+        
         // Check input parameters for null
         if(directory == null) {
             if(mDirectory != null){
@@ -183,26 +213,26 @@ public class LocalFileListFragment extends ExtendedListFragment {
         /**
          * Callback method invoked when a directory is clicked by the user on the files list
          *
-         * @param directory
+         * @param folder    Folder shown in the item clicked by the user
          */
-        public void onDirectoryClick(File directory);
-
+        void onFolderClicked(File folder);
+        
         /**
          * Callback method invoked when a file (non directory)
          * is clicked by the user on the files list
-         *
-         * @param file
+         *  
+         * @param file      File shown in the item clicked by the user
          */
-        public void onFileClick(File file);
-
-
+        void onFileClicked(File file);
+        
+        
         /**
          * Callback method invoked when the parent activity
          * is fully created to get the directory to list firstly.
-         *
-         * @return Directory to list firstly. Can be NULL.
+         * 
+         * @return  Directory to list firstly. Can be NULL.
          */
-        public File getInitialDirectory();
+        File getCurrentFolder();
 
     }
 

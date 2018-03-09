@@ -1,42 +1,36 @@
 /**
- *   ownCloud Android client application
+ * ownCloud Android client application
  *
- *   @author Bartek Przybylski
- *   @author David A. Velasco
- *   Copyright (C) 2011  Bartek Przybylski
- *   Copyright (C) 2016 ownCloud Inc.
+ * @author Bartek Przybylski
+ * @author David A. Velasco
+ * @author David González Verdugo
+ * Copyright (C) 2011  Bartek Przybylski
+ * Copyright (C) 2017 ownCloud GmbH.
  *
- *   This program is free software: you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License version 2,
- *   as published by the Free Software Foundation.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2,
+ * as published by the Free Software Foundation.
  *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
  *
- *   You should have received a copy of the GNU General Public License
- *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
- *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 package com.owncloud.android.ui.activity;
 
-import android.accounts.Account;
-import android.accounts.AccountManager;
-import android.accounts.AccountManagerCallback;
-import android.accounts.AccountManagerFuture;
-import android.content.ComponentName;
-import android.content.Context;
+import android.app.AlertDialog;
+import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.ServiceConnection;
 import android.content.SharedPreferences;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager.NameNotFoundException;
 import android.content.res.Configuration;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
-import android.os.Handler;
-import android.os.IBinder;
 import android.preference.CheckBoxPreference;
 import android.preference.Preference;
 import android.preference.Preference.OnPreferenceChangeListener;
@@ -46,38 +40,26 @@ import android.preference.PreferenceCategory;
 import android.preference.PreferenceManager;
 import android.support.annotation.LayoutRes;
 import android.support.annotation.Nullable;
+import android.support.design.widget.Snackbar;
 import android.support.v7.app.ActionBar;
-import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatDelegate;
 import android.support.v7.widget.Toolbar;
-import android.view.ContextMenu;
-import android.view.ContextMenu.ContextMenuInfo;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.AdapterView;
-import android.widget.AdapterView.OnItemLongClickListener;
-import android.widget.ArrayAdapter;
-import android.widget.ListAdapter;
-import android.widget.ListView;
-import android.widget.Toast;
 
 import com.owncloud.android.BuildConfig;
 import com.owncloud.android.MainApp;
 import com.owncloud.android.R;
-import com.owncloud.android.authentication.AccountUtils;
-import com.owncloud.android.authentication.AuthenticatorActivity;
-import com.owncloud.android.datamodel.FileDataStorageManager;
 import com.owncloud.android.datamodel.OCFile;
-import com.owncloud.android.files.FileOperationsHelper;
-import com.owncloud.android.files.services.FileDownloader;
-import com.owncloud.android.files.services.FileUploader;
+import com.owncloud.android.db.PreferenceManager.CameraUploadsConfiguration;
+import com.owncloud.android.files.services.CameraUploadsHandler;
 import com.owncloud.android.lib.common.utils.Log_OC;
-import com.owncloud.android.services.OperationsService;
-import com.owncloud.android.ui.RadioButtonPreference;
 import com.owncloud.android.utils.DisplayUtils;
+
+import java.io.File;
 
 
 /**
@@ -86,40 +68,40 @@ import com.owncloud.android.utils.DisplayUtils;
  * It proxies the necessary calls via {@link android.support.v7.app.AppCompatDelegate} to be used
  * with AppCompat.
  */
-public class Preferences extends PreferenceActivity
-        implements AccountManagerCallback<Boolean>, ComponentsGetter {
-    
-    private static final String TAG = Preferences.class.getSimpleName();
+public class Preferences extends PreferenceActivity {
 
+    private static final String TAG = Preferences.class.getSimpleName();
 
     private static final int ACTION_SELECT_UPLOAD_PATH = 1;
     private static final int ACTION_SELECT_UPLOAD_VIDEO_PATH = 2;
+    private static final int ACTION_SELECT_SOURCE_PATH = 3;
     private static final int ACTION_REQUEST_PASSCODE = 5;
     private static final int ACTION_CONFIRM_PASSCODE = 6;
+    private static final int ACTION_REQUEST_PATTERN = 7;
+    private static final int ACTION_CONFIRM_PATTERN = 8;
 
     private CheckBoxPreference pCode;
+    private CheckBoxPreference pPattern;
     private Preference pAboutApp;
     private AppCompatDelegate mDelegate;
 
-    private PreferenceCategory mAccountsPrefCategory = null;
-    private final Handler mHandler = new Handler();
-    private String mAccountName;
-    private boolean mShowContextMenu = false;
     private String mUploadPath;
-    private PreferenceCategory mPrefInstantUploadCategory;
-    private Preference mPrefInstantUpload;
-    private Preference mPrefInstantUploadBehaviour;
-    private Preference mPrefInstantUploadPath;
-    private Preference mPrefInstantUploadPathWiFi;
-    private Preference mPrefInstantVideoUpload;
-    private Preference mPrefInstantVideoUploadPath;
-    private Preference mPrefInstantVideoUploadPathWiFi;
     private String mUploadVideoPath;
+    private String mSourcePath;
+    private boolean patternSet;
+    private boolean passcodeSet;
 
-    protected FileDownloader.FileDownloaderBinder mDownloaderBinder = null;
-    protected FileUploader.FileUploaderBinder mUploaderBinder = null;
-    private ServiceConnection mDownloadServiceConnection, mUploadServiceConnection = null;
+    private PreferenceCategory mPrefCameraUploadsCategory;
+    private Preference mPrefCameraPictureUploads;
+    private Preference mPrefCameraPictureUploadsPath;
+    private Preference mPrefCameraPictureUploadsWiFi;
+    private Preference mPrefCameraVideoUploads;
+    private Preference mPrefCameraVideoUploadsPath;
+    private Preference mPrefCameraVideoUploadsWiFi;
+    private Preference mPrefCameraUploadsSourcePath;
+    private Preference mPrefCameraUploadsBehaviour;
 
+    private CameraUploadsHandler mCameraUploadsHandler;
 
     @SuppressWarnings("deprecation")
     @Override
@@ -141,72 +123,6 @@ public class Preferences extends PreferenceActivity
                     setContentDescription(getString(R.string.actionbar_settings));
         }
 
-        // Load the accounts category for adding the list of accounts
-        mAccountsPrefCategory = (PreferenceCategory) findPreference("accounts_category");
-
-        ListView listView = getListView();
-        listView.setOnItemLongClickListener(new OnItemLongClickListener() {
-            @Override
-            public boolean onItemLongClick(AdapterView<?> parent, View view, int position, long id) {
-                ListView listView = (ListView) parent;
-                ListAdapter listAdapter = listView.getAdapter();
-                Object obj = listAdapter.getItem(position);
-
-                if (obj != null && obj instanceof RadioButtonPreference) {
-                    mShowContextMenu = true;
-                    mAccountName = ((RadioButtonPreference) obj).getKey();
-
-                    String[] items = {
-                            getResources().getString(R.string.change_password),
-                            getResources().getString(R.string.delete_account)
-                    };
-                    final AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(Preferences.this);
-                    View convertView = getLayoutInflater().inflate(R.layout.alert_dialog_list_view, null);
-                    alertDialogBuilder.setView(convertView);
-                    ListView lv = (ListView) convertView.findViewById(R.id.list);
-                    ArrayAdapter<String> adapter = new ArrayAdapter<String>(
-                            Preferences.this,R.layout.simple_dialog_list_item,items);
-                    lv.setAdapter(adapter);
-
-                    //Setup proper inline listener
-                    final AlertDialog alertDialog = alertDialogBuilder.create();
-                    lv.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-                        @Override
-                        public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                            AccountManager am = (AccountManager) getSystemService(ACCOUNT_SERVICE);
-                            Account accounts[] = am.getAccountsByType(MainApp.getAccountType());
-                            for (Account a : accounts) {
-                                if (a.name.equals(mAccountName)) {
-                                    if (position==0) {
-
-                                        // Change account password
-                                        Intent updateAccountCredentials = new Intent(Preferences.this, AuthenticatorActivity.class);
-                                        updateAccountCredentials.putExtra(AuthenticatorActivity.EXTRA_ACCOUNT, a);
-                                        updateAccountCredentials.putExtra(AuthenticatorActivity.EXTRA_ACTION,
-                                                AuthenticatorActivity.ACTION_UPDATE_TOKEN);
-                                        startActivity(updateAccountCredentials);
-                                        alertDialog.cancel();
-                                        
-                                    } else if (position==1) {
-
-                                        // Remove account
-                                        am.removeAccount(a, Preferences.this, mHandler);
-                                        Log_OC.d(TAG, "Remove an account " + a.name);
-                                        alertDialog.cancel();
-                                    }
-                                }
-                            }
-                        }
-                    });
-                    alertDialog.show();
-
-                    View.OnLongClickListener longListener = (View.OnLongClickListener) obj;
-                    return longListener.onLongClick(view);
-                }
-                return false;
-            }
-        });
-        
         // Load package info
         String temp;
         try {
@@ -215,47 +131,70 @@ public class Preferences extends PreferenceActivity
         } catch (NameNotFoundException e) {
             temp = "";
             Log_OC.e(TAG, "Error while showing about dialog", e);
-        } 
+        }
         final String appVersion = temp;
-       
+
         // Register context menu for list of preferences.
         registerForContextMenu(getListView());
 
         pCode = (CheckBoxPreference) findPreference(PassCodeActivity.PREFERENCE_SET_PASSCODE);
-        if (pCode != null){
+        if (pCode != null) {
             pCode.setOnPreferenceChangeListener(new OnPreferenceChangeListener() {
                 @Override
                 public boolean onPreferenceChange(Preference preference, Object newValue) {
                     Intent i = new Intent(getApplicationContext(), PassCodeActivity.class);
                     Boolean incoming = (Boolean) newValue;
+                    SharedPreferences appPrefs = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
+                    patternSet = appPrefs.getBoolean(PatternLockActivity.PREFERENCE_SET_PATTERN,false);
+                    if(patternSet){
+                        showSnackMessage(R.string.pattern_already_set);
+                    }
+                    else {
+                        i.setAction(
+                                incoming ? PassCodeActivity.ACTION_REQUEST_WITH_RESULT :
+                                        PassCodeActivity.ACTION_CHECK_WITH_RESULT
+                        );
 
-                    i.setAction(
-                            incoming.booleanValue() ? PassCodeActivity.ACTION_REQUEST_WITH_RESULT :
-                                    PassCodeActivity.ACTION_CHECK_WITH_RESULT
-                    );
-
-                    startActivityForResult(i, incoming.booleanValue() ? ACTION_REQUEST_PASSCODE :
-                            ACTION_CONFIRM_PASSCODE);
-
+                        startActivityForResult(i, incoming ? ACTION_REQUEST_PASSCODE :
+                                ACTION_CONFIRM_PASSCODE);
+                    }
                     // Don't update just yet, we will decide on it in onActivityResult
                     return false;
                 }
             });
-            
         }
 
-
+        pPattern = (CheckBoxPreference) findPreference(PatternLockActivity.PREFERENCE_SET_PATTERN);
+        if (pPattern != null) {
+            pPattern.setOnPreferenceChangeListener(new OnPreferenceChangeListener() {
+                @Override
+                public boolean onPreferenceChange(Preference preference, Object newValue) {
+                    Intent intent = new Intent(getApplicationContext(), PatternLockActivity.class);
+                    Boolean state = (Boolean) newValue;
+                    SharedPreferences appPrefs = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
+                    passcodeSet = appPrefs.getBoolean(PassCodeActivity.PREFERENCE_SET_PASSCODE,false);
+                    if(passcodeSet){
+                        showSnackMessage(R.string.passcode_already_set);
+                    }
+                    else {
+                        intent.setAction(state ? PatternLockActivity.ACTION_REQUEST_WITH_RESULT : PatternLockActivity.ACTION_CHECK_WITH_RESULT);
+                        startActivityForResult(intent, state ? ACTION_REQUEST_PATTERN : ACTION_CONFIRM_PATTERN);
+                    }
+                    return false;
+                }
+            });
+        }
 
         PreferenceCategory preferenceCategory = (PreferenceCategory) findPreference("more");
-        
+
         boolean helpEnabled = getResources().getBoolean(R.bool.help_enabled);
-        Preference pHelp =  findPreference("help");
-        if (pHelp != null ){
+        Preference pHelp = findPreference("help");
+        if (pHelp != null) {
             if (helpEnabled) {
                 pHelp.setOnPreferenceClickListener(new OnPreferenceClickListener() {
                     @Override
                     public boolean onPreferenceClick(Preference preference) {
-                        String helpWeb   =(String) getText(R.string.url_help);
+                        String helpWeb = (String) getText(R.string.url_help);
                         if (helpWeb != null && helpWeb.length() > 0) {
                             Uri uriUrl = Uri.parse(helpWeb);
                             Intent intent = new Intent(Intent.ACTION_VIEW, uriUrl);
@@ -267,63 +206,61 @@ public class Preferences extends PreferenceActivity
             } else {
                 preferenceCategory.removePreference(pHelp);
             }
-            
         }
-        
-       boolean recommendEnabled = getResources().getBoolean(R.bool.recommend_enabled);
-       Preference pRecommend =  findPreference("recommend");
-        if (pRecommend != null){
+
+        boolean recommendEnabled = getResources().getBoolean(R.bool.recommend_enabled);
+        Preference pRecommend = findPreference("recommend");
+        if (pRecommend != null) {
             if (recommendEnabled) {
                 pRecommend.setOnPreferenceClickListener(new OnPreferenceClickListener() {
                     @Override
                     public boolean onPreferenceClick(Preference preference) {
 
-                        Intent intent = new Intent(Intent.ACTION_SENDTO); 
+                        Intent intent = new Intent(Intent.ACTION_SENDTO);
                         intent.setType("text/plain");
-                        intent.setData(Uri.parse(getString(R.string.mail_recommend))); 
-                        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK); 
-                        
+                        intent.setData(Uri.parse(getString(R.string.mail_recommend)));
+                        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+
                         String appName = getString(R.string.app_name);
                         String downloadUrl = getString(R.string.url_app_download);
 
                         String recommendSubject =
                                 String.format(getString(R.string.recommend_subject),
-                                appName);
+                                        appName);
                         String recommendText = String.format(getString(R.string.recommend_text),
                                 appName, downloadUrl);
-                        
+
                         intent.putExtra(Intent.EXTRA_SUBJECT, recommendSubject);
                         intent.putExtra(Intent.EXTRA_TEXT, recommendText);
                         startActivity(intent);
 
-                        return(true);
+                        return (true);
 
                     }
                 });
             } else {
                 preferenceCategory.removePreference(pRecommend);
             }
-            
         }
-        
+
         boolean feedbackEnabled = getResources().getBoolean(R.bool.feedback_enabled);
-        Preference pFeedback =  findPreference("feedback");
-        if (pFeedback != null){
+        Preference pFeedback = findPreference("feedback");
+        if (pFeedback != null) {
             if (feedbackEnabled) {
                 pFeedback.setOnPreferenceClickListener(new OnPreferenceClickListener() {
                     @Override
                     public boolean onPreferenceClick(Preference preference) {
-                        String feedbackMail   =(String) getText(R.string.mail_feedback);
-                        String feedback   =(String) getText(R.string.prefs_feedback) +
+                        String feedbackMail = (String) getText(R.string.mail_feedback);
+                        String feedback = (String) getText(R.string.prefs_feedback) +
                                 " - android v" + appVersion;
-                        Intent intent = new Intent(Intent.ACTION_SENDTO); 
+                        Intent intent = new Intent(Intent.ACTION_SENDTO);
                         intent.setType("text/plain");
                         intent.putExtra(Intent.EXTRA_SUBJECT, feedback);
-                        
-                        intent.setData(Uri.parse(feedbackMail)); 
-                        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK); 
+
+                        intent.setData(Uri.parse(feedbackMail));
+                        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                         startActivity(intent);
-                        
+
                         return true;
                     }
                 });
@@ -332,9 +269,28 @@ public class Preferences extends PreferenceActivity
             }
         }
 
-        boolean loggerEnabled = getResources().getBoolean(R.bool.logger_enabled) || BuildConfig.DEBUG;
-        Preference pLogger =  findPreference("logger");
-        if (pLogger != null){
+        boolean privacyPolicyEnabled = getResources().getBoolean(R.bool.privacy_policy_enabled);
+        Preference pPrivacyPolicy = findPreference("privacyPolicy");
+        if (pPrivacyPolicy != null) {
+            if (privacyPolicyEnabled) {
+                pPrivacyPolicy.setOnPreferenceClickListener(new OnPreferenceClickListener() {
+                    @Override
+                    public boolean onPreferenceClick(Preference preference) {
+                        Intent privacyPolicyIntent = new Intent(getApplicationContext(), PrivacyPolicyActivity.class);
+                        startActivity(privacyPolicyIntent);
+
+                        return true;
+                    }
+                });
+            } else {
+                preferenceCategory.removePreference(pPrivacyPolicy);
+            }
+        }
+
+        boolean loggerEnabled = getResources().getBoolean(R.bool.logger_enabled) ||
+                BuildConfig.DEBUG || BuildConfig.BUILD_TYPE.equals(MainApp.BUILD_TYPE_BETA);
+        Preference pLogger = findPreference("logger");
+        if (pLogger != null) {
             if (loggerEnabled) {
                 pLogger.setOnPreferenceClickListener(new OnPreferenceClickListener() {
                     @Override
@@ -351,7 +307,7 @@ public class Preferences extends PreferenceActivity
         }
 
         boolean imprintEnabled = getResources().getBoolean(R.bool.imprint_enabled);
-        Preference pImprint =  findPreference("imprint");
+        Preference pImprint = findPreference("imprint");
         if (pImprint != null) {
             if (imprintEnabled) {
                 pImprint.setOnPreferenceClickListener(new OnPreferenceClickListener() {
@@ -363,7 +319,6 @@ public class Preferences extends PreferenceActivity
                             Intent intent = new Intent(Intent.ACTION_VIEW, uriUrl);
                             startActivity(intent);
                         }
-                        //ImprintDialog.newInstance(true).show(preference.get, "IMPRINT_DIALOG");
                         return true;
                     }
                 });
@@ -372,172 +327,213 @@ public class Preferences extends PreferenceActivity
             }
         }
 
-        mPrefInstantUploadPath =  findPreference("instant_upload_path");
-        if (mPrefInstantUploadPath != null){
-
-            mPrefInstantUploadPath.setOnPreferenceClickListener(new OnPreferenceClickListener() {
-                    @Override
-                    public boolean onPreferenceClick(Preference preference) {
-                        if (!mUploadPath.endsWith(OCFile.PATH_SEPARATOR)) {
-                            mUploadPath += OCFile.PATH_SEPARATOR;
-                        }
-                        Intent intent = new Intent(Preferences.this, UploadPathActivity.class);
-                        intent.putExtra(UploadPathActivity.KEY_INSTANT_UPLOAD_PATH, mUploadPath);
-                        startActivityForResult(intent, ACTION_SELECT_UPLOAD_PATH);
-                        return true;
+        mPrefCameraPictureUploadsPath = findPreference("camera_picture_uploads_path");
+        if (mPrefCameraPictureUploadsPath != null) {
+            mPrefCameraPictureUploadsPath.setOnPreferenceClickListener(new OnPreferenceClickListener() {
+                @Override
+                public boolean onPreferenceClick(Preference preference) {
+                    if (!mUploadPath.endsWith(OCFile.PATH_SEPARATOR)) {
+                        mUploadPath += OCFile.PATH_SEPARATOR;
                     }
-                });
+                    Intent intent = new Intent(Preferences.this, UploadPathActivity.class);
+                    intent.putExtra(UploadPathActivity.KEY_CAMERA_UPLOAD_PATH, mUploadPath);
+                    startActivityForResult(intent, ACTION_SELECT_UPLOAD_PATH);
+                    return true;
+                }
+            });
         }
-        
-        mPrefInstantUploadCategory =
-                (PreferenceCategory) findPreference("instant_uploading_category");
-        
-        mPrefInstantUploadPathWiFi =  findPreference("instant_upload_on_wifi");
-        mPrefInstantUpload = findPreference("instant_uploading");
-        
-        toggleInstantPictureOptions(((CheckBoxPreference) mPrefInstantUpload).isChecked());
-        
-        mPrefInstantUpload.setOnPreferenceChangeListener(new OnPreferenceChangeListener() {
-            
+
+        mPrefCameraUploadsCategory =
+                (PreferenceCategory) findPreference("camera_uploads_category");
+
+        mPrefCameraPictureUploadsWiFi = findPreference("camera_picture_uploads_on_wifi");
+        mPrefCameraPictureUploads = findPreference("camera_picture_uploads");
+
+        toggleCameraUploadsPictureOptions(true, ((CheckBoxPreference) mPrefCameraPictureUploads).isChecked());
+
+        mPrefCameraPictureUploads.setOnPreferenceChangeListener(new OnPreferenceChangeListener() {
+
             @Override
             public boolean onPreferenceChange(Preference preference, Object newValue) {
-                toggleInstantPictureOptions((Boolean) newValue);
-                toggleInstantUploadBehaviour(
-                        ((CheckBoxPreference)mPrefInstantVideoUpload).isChecked(),
-                        (Boolean) newValue);
+                boolean enableCameraUploadsPicture = (Boolean) newValue;
+                toggleCameraUploadsPictureOptions(false, enableCameraUploadsPicture);
+                toggleCameraUploadsCommonOptions(
+                        ((CheckBoxPreference) mPrefCameraVideoUploads).isChecked(),
+                        enableCameraUploadsPicture
+                );
                 return true;
             }
         });
-       
-        mPrefInstantVideoUploadPath =  findPreference("instant_video_upload_path");
-        if (mPrefInstantVideoUploadPath != null){
 
-            mPrefInstantVideoUploadPath.setOnPreferenceClickListener(new OnPreferenceClickListener() {
-                    @Override
-                    public boolean onPreferenceClick(Preference preference) {
-                        if (!mUploadVideoPath.endsWith(OCFile.PATH_SEPARATOR)) {
-                            mUploadVideoPath += OCFile.PATH_SEPARATOR;
-                        }
-                        Intent intent = new Intent(Preferences.this, UploadPathActivity.class);
-                        intent.putExtra(UploadPathActivity.KEY_INSTANT_UPLOAD_PATH,
-                                mUploadVideoPath);
-                        startActivityForResult(intent, ACTION_SELECT_UPLOAD_VIDEO_PATH);
-                        return true;
+        mPrefCameraVideoUploadsPath = findPreference("camera_video_uploads_path");
+        if (mPrefCameraVideoUploadsPath != null) {
+
+            mPrefCameraVideoUploadsPath.setOnPreferenceClickListener(new OnPreferenceClickListener() {
+                @Override
+                public boolean onPreferenceClick(Preference preference) {
+                    if (!mUploadVideoPath.endsWith(OCFile.PATH_SEPARATOR)) {
+                        mUploadVideoPath += OCFile.PATH_SEPARATOR;
                     }
-                });
+                    Intent intent = new Intent(Preferences.this, UploadPathActivity.class);
+                    intent.putExtra(UploadPathActivity.KEY_CAMERA_UPLOAD_PATH,
+                            mUploadVideoPath);
+                    startActivityForResult(intent, ACTION_SELECT_UPLOAD_VIDEO_PATH);
+                    return true;
+                }
+            });
         }
-        
-        mPrefInstantVideoUploadPathWiFi =  findPreference("instant_video_upload_on_wifi");
-        mPrefInstantVideoUpload = findPreference("instant_video_uploading");
-        toggleInstantVideoOptions(((CheckBoxPreference) mPrefInstantVideoUpload).isChecked());
-        
-        mPrefInstantVideoUpload.setOnPreferenceChangeListener(new OnPreferenceChangeListener() {
+
+        mPrefCameraVideoUploadsWiFi = findPreference("camera_video_uploads_on_wifi");
+        mPrefCameraVideoUploads = findPreference("camera_video_uploads");
+        toggleCameraUploadsVideoOptions(true, ((CheckBoxPreference) mPrefCameraVideoUploads).isChecked());
+
+        mPrefCameraVideoUploads.setOnPreferenceChangeListener(new OnPreferenceChangeListener() {
 
             @Override
             public boolean onPreferenceChange(Preference preference, Object newValue) {
-                toggleInstantVideoOptions((Boolean) newValue);
-                toggleInstantUploadBehaviour(
+                toggleCameraUploadsVideoOptions(false, (Boolean) newValue);
+                toggleCameraUploadsCommonOptions(
                         (Boolean) newValue,
-                        ((CheckBoxPreference) mPrefInstantUpload).isChecked());
+                        ((CheckBoxPreference) mPrefCameraPictureUploads).isChecked());
                 return true;
             }
         });
 
-        mPrefInstantUploadBehaviour = findPreference("prefs_instant_behaviour");
-        toggleInstantUploadBehaviour(
-                ((CheckBoxPreference)mPrefInstantVideoUpload).isChecked(),
-                ((CheckBoxPreference)mPrefInstantUpload).isChecked());
+        mPrefCameraUploadsSourcePath = findPreference("camera_uploads_source_path");
+        if (mPrefCameraUploadsSourcePath != null) {
+            mPrefCameraUploadsSourcePath.setOnPreferenceClickListener(new OnPreferenceClickListener() {
+                @Override
+                public boolean onPreferenceClick(Preference preference) {
+                    if (!mSourcePath.endsWith(File.separator)) {
+                        mSourcePath += File.separator;
+                    }
+                    LocalFolderPickerActivity.startLocalFolderPickerActivityForResult(
+                            Preferences.this,
+                            mSourcePath,
+                            ACTION_SELECT_SOURCE_PATH
+                    );
+                    return true;
+                }
+            });
+        } else {
+            Log_OC.e(TAG, "Lost preference camera_uploads_source_path");
+        }
+
+        mPrefCameraUploadsBehaviour = findPreference("camera_uploads_behaviour");
+        toggleCameraUploadsCommonOptions(
+                ((CheckBoxPreference) mPrefCameraVideoUploads).isChecked(),
+                ((CheckBoxPreference) mPrefCameraPictureUploads).isChecked());
 
         /* About App */
-       pAboutApp = (Preference) findPreference("about_app");
-       if (pAboutApp != null) { 
-               pAboutApp.setTitle(String.format(getString(R.string.about_android),
-                       getString(R.string.app_name)));
-               pAboutApp.setSummary(String.format(getString(R.string.about_version), appVersion));
-       }
-
-       loadInstantUploadPath();
-       loadInstantUploadVideoPath();
-
-        /* ComponentsGetter */
-        mDownloadServiceConnection = newTransferenceServiceConnection();
-        if (mDownloadServiceConnection != null) {
-            bindService(new Intent(this, FileDownloader.class), mDownloadServiceConnection,
-                    Context.BIND_AUTO_CREATE);
+        pAboutApp = (Preference) findPreference("about_app");
+        if (pAboutApp != null) {
+            pAboutApp.setTitle(String.format(
+                    getString(R.string.about_android),
+                    getString(R.string.app_name)
+            ));
+            pAboutApp.setSummary(String.format(getString(R.string.about_version), appVersion));
         }
-        mUploadServiceConnection = newTransferenceServiceConnection();
-        if (mUploadServiceConnection != null) {
-            bindService(new Intent(this, FileUploader.class), mUploadServiceConnection,
-                    Context.BIND_AUTO_CREATE);
-        }
+        loadCameraUploadsPicturePath();
+        loadCameraUploadsVideoPath();
+        loadCameraUploadsSourcePath();
 
+        CameraUploadsConfiguration configuration = com.owncloud.android.db.PreferenceManager.
+                getCameraUploadsConfiguration(this);
+
+        mCameraUploadsHandler = new CameraUploadsHandler(this, configuration);
     }
-    
-    private void toggleInstantPictureOptions(Boolean value){
-        if (value){
-            mPrefInstantUploadCategory.addPreference(mPrefInstantUploadPathWiFi);
-            mPrefInstantUploadCategory.addPreference(mPrefInstantUploadPath);
+
+    /**
+     * Handle the toggles from the different camera uploads for pictures options
+     *
+     * @param initializing to avoid showing the dialog to confirm camera uploads disabling in the first load of the
+     *                     view and showing it when the user just unchecked the feature checkbox
+     * @param isChecked    camera uploads for pictures is checked
+     */
+    private void toggleCameraUploadsPictureOptions(Boolean initializing, Boolean isChecked) {
+        if (isChecked) {
+            mPrefCameraUploadsCategory.addPreference(mPrefCameraPictureUploadsWiFi);
+            mPrefCameraUploadsCategory.addPreference(mPrefCameraPictureUploadsPath);
+
+
         } else {
-            mPrefInstantUploadCategory.removePreference(mPrefInstantUploadPathWiFi);
-            mPrefInstantUploadCategory.removePreference(mPrefInstantUploadPath);
-        }
-    }
-    
-    private void toggleInstantVideoOptions(Boolean value){
-        if (value){
-            mPrefInstantUploadCategory.addPreference(mPrefInstantVideoUploadPathWiFi);
-            mPrefInstantUploadCategory.addPreference(mPrefInstantVideoUploadPath);
-        } else {
-            mPrefInstantUploadCategory.removePreference(mPrefInstantVideoUploadPathWiFi);
-            mPrefInstantUploadCategory.removePreference(mPrefInstantVideoUploadPath);
-        }
-    }
 
-    private void toggleInstantUploadBehaviour(Boolean video, Boolean picture){
-        if (picture || video){
-            mPrefInstantUploadCategory.addPreference(mPrefInstantUploadBehaviour);
-        } else {
-            mPrefInstantUploadCategory.removePreference(mPrefInstantUploadBehaviour);
-        }
-    }
+            if (!initializing) {
 
-    @Override
-    public void onCreateContextMenu(ContextMenu menu, View v, ContextMenuInfo menuInfo) {
+                final AlertDialog builder = new AlertDialog.Builder(this).create();
 
-        // Filter for only showing contextual menu when long press on the
-        // accounts
-        if (mShowContextMenu) {
-            getMenuInflater().inflate(R.menu.account_picker_long_click, menu);
-            mShowContextMenu = false;
-        }
-        super.onCreateContextMenu(menu, v, menuInfo);
-    }
+                showConfirmationDialog(builder, getString(R.string.confirmation_disable_pictures_upload_message),
+                        new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+                                if (which == DialogInterface.BUTTON_NEGATIVE) {
+                                    ((CheckBoxPreference) mPrefCameraPictureUploads).setChecked(true);
+                                    mPrefCameraUploadsCategory.addPreference(mPrefCameraPictureUploadsWiFi);
+                                    mPrefCameraUploadsCategory.addPreference(mPrefCameraPictureUploadsPath);
 
-    @Override
-    public void run(AccountManagerFuture<Boolean> future) {
-        if (future.isDone()) {
-            // after remove account
-            Account account = new Account(mAccountName, MainApp.getAccountType());
-            if (!AccountUtils.exists(account, MainApp.getAppContext())) {
-                // Cancel tranfers
-                if (mUploaderBinder != null) {
-                    mUploaderBinder.cancel(account);
-                }
-                if (mDownloaderBinder != null) {
-                    mDownloaderBinder.cancel(account);
-                }
+                                } else if (which == DialogInterface.BUTTON_POSITIVE) {
+                                    mPrefCameraUploadsCategory.removePreference(mPrefCameraPictureUploadsWiFi);
+                                    mPrefCameraUploadsCategory.removePreference(mPrefCameraPictureUploadsPath);
+                                    mCameraUploadsHandler.updatePicturesLastSync(0);
+                                }
+                                dismissConfirmationDialog(builder);
+                            }
+                        });
+            } else {
+                mPrefCameraUploadsCategory.removePreference(mPrefCameraPictureUploadsWiFi);
+                mPrefCameraUploadsCategory.removePreference(mPrefCameraPictureUploadsPath);
             }
+        }
+    }
 
-            Account a = AccountUtils.getCurrentOwnCloudAccount(this);
-            String accountName = "";
-            if (a == null) {
-                Account[] accounts = AccountManager.get(this)
-                        .getAccountsByType(MainApp.getAccountType());
-                if (accounts.length != 0)
-                    accountName = accounts[0].name;
-                AccountUtils.setCurrentOwnCloudAccount(this, accountName);
+    /**
+     * Handle the toggles from the different camera uploads for videos options
+     *
+     * @param initializing to avoid showing the dialog to confirm camera uploads disabling in the first load of the
+     *                     view and showing it when the user just unchecked the feature checkbox
+     * @param isChecked    camera uploads for videos is checked
+     */
+    private void toggleCameraUploadsVideoOptions(Boolean initializing, Boolean isChecked) {
+        if (isChecked) {
+            mPrefCameraUploadsCategory.addPreference(mPrefCameraVideoUploadsWiFi);
+            mPrefCameraUploadsCategory.addPreference(mPrefCameraVideoUploadsPath);
+        } else {
+
+            if (!initializing) {
+
+                final AlertDialog builder = new AlertDialog.Builder(this).create();
+
+                showConfirmationDialog(builder, getString(R.string.confirmation_disable_videos_upload_message),
+                        new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+                                if (which == DialogInterface.BUTTON_NEGATIVE) {
+                                    ((CheckBoxPreference) mPrefCameraVideoUploads).setChecked(true);
+                                    mPrefCameraUploadsCategory.addPreference(mPrefCameraVideoUploadsWiFi);
+                                    mPrefCameraUploadsCategory.addPreference(mPrefCameraVideoUploadsPath);
+                                } else if (which == DialogInterface.BUTTON_POSITIVE) {
+                                    mPrefCameraUploadsCategory.removePreference(mPrefCameraVideoUploadsWiFi);
+                                    mPrefCameraUploadsCategory.removePreference(mPrefCameraVideoUploadsPath);
+                                    mCameraUploadsHandler.updateVideosLastSync(0);
+                                }
+                                dismissConfirmationDialog(builder);
+                            }
+                        });
+
+            } else {
+                mPrefCameraUploadsCategory.removePreference(mPrefCameraVideoUploadsWiFi);
+                mPrefCameraUploadsCategory.removePreference(mPrefCameraVideoUploadsPath);
             }
-            addAccountsCheckboxPreferences();
+        }
+    }
+
+    private void toggleCameraUploadsCommonOptions(Boolean video, Boolean picture) {
+        if (picture || video) {
+            mPrefCameraUploadsCategory.addPreference(mPrefCameraUploadsSourcePath);
+            mPrefCameraUploadsCategory.addPreference(mPrefCameraUploadsBehaviour);
+        } else {
+            mPrefCameraUploadsCategory.removePreference(mPrefCameraUploadsSourcePath);
+            mPrefCameraUploadsCategory.removePreference(mPrefCameraUploadsBehaviour);
         }
     }
 
@@ -546,11 +542,10 @@ public class Preferences extends PreferenceActivity
         super.onResume();
         SharedPreferences appPrefs =
                 PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
-        boolean state = appPrefs.getBoolean(PassCodeActivity.PREFERENCE_SET_PASSCODE, false);
-        pCode.setChecked(state);
-
-        // Populate the accounts category with the list of accounts
-        addAccountsCheckboxPreferences();
+        boolean passCodeState = appPrefs.getBoolean(PassCodeActivity.PREFERENCE_SET_PASSCODE, false);
+        pCode.setChecked(passCodeState);
+        boolean patternState = appPrefs.getBoolean(PatternLockActivity.PREFERENCE_SET_PATTERN,false);
+        pPattern.setChecked(patternState);
     }
 
     @Override
@@ -565,14 +560,14 @@ public class Preferences extends PreferenceActivity
         Intent intent;
 
         switch (item.getItemId()) {
-        case android.R.id.home:
-            intent = new Intent(getBaseContext(), FileDisplayActivity.class);
-            intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-            startActivity(intent);
-            break;
-        default:
-            Log_OC.w(TAG, "Unknown menu item triggered");
-            return false;
+            case android.R.id.home:
+                intent = new Intent(getBaseContext(), FileDisplayActivity.class);
+                intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                startActivity(intent);
+                break;
+            default:
+                Log_OC.w(TAG, "Unknown menu item triggered");
+                return false;
         }
         return true;
     }
@@ -581,55 +576,89 @@ public class Preferences extends PreferenceActivity
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
 
-        if (requestCode == ACTION_SELECT_UPLOAD_PATH && resultCode == RESULT_OK){
+        if (requestCode == ACTION_SELECT_UPLOAD_PATH && resultCode == RESULT_OK) {
 
-            OCFile folderToUpload =
-                    (OCFile) data.getParcelableExtra(UploadPathActivity.EXTRA_FOLDER);
-
+            OCFile folderToUpload = data.getParcelableExtra(UploadPathActivity.EXTRA_FOLDER);
             mUploadPath = folderToUpload.getRemotePath();
+            mPrefCameraPictureUploadsPath.setSummary(
+                    DisplayUtils.getPathWithoutLastSlash(mUploadPath)
+            );
+            saveCameraUploadsPicturePathOnPreferences();
 
-            mUploadPath = DisplayUtils.getPathWithoutLastSlash(mUploadPath);
+        } else if (requestCode == ACTION_SELECT_UPLOAD_VIDEO_PATH && resultCode == RESULT_OK) {
 
-            // Show the path on summary preference
-            mPrefInstantUploadPath.setSummary(mUploadPath);
-
-            saveInstantUploadPathOnPreferences();
-
-        } else if (requestCode == ACTION_SELECT_UPLOAD_VIDEO_PATH && resultCode == RESULT_OK){
-
-            OCFile folderToUploadVideo =
-                    (OCFile) data.getParcelableExtra(UploadPathActivity.EXTRA_FOLDER);
-
+            OCFile folderToUploadVideo = data.getParcelableExtra(UploadPathActivity.EXTRA_FOLDER);
             mUploadVideoPath = folderToUploadVideo.getRemotePath();
+            mPrefCameraVideoUploadsPath.setSummary(
+                    DisplayUtils.getPathWithoutLastSlash(mUploadVideoPath)
+            );
+            saveCameraUploadsVideoPathOnPreferences();
 
-            mUploadVideoPath = DisplayUtils.getPathWithoutLastSlash(mUploadVideoPath);
+        } else if (requestCode == ACTION_SELECT_SOURCE_PATH && resultCode == RESULT_OK) {
 
-            // Show the video path on summary preference
-            mPrefInstantVideoUploadPath.setSummary(mUploadVideoPath);
+            // If the source path has changed, update camera uploads last sync
+            String previousSourcePath = mSourcePath;
 
-            saveInstantUploadVideoPathOnPreferences();
+            if (previousSourcePath.endsWith(File.separator)) {
+                previousSourcePath = previousSourcePath.substring(0, previousSourcePath.length() - 1);
+            }
+
+            if (!previousSourcePath.equals(data.getStringExtra(LocalFolderPickerActivity.EXTRA_PATH))) {
+                long currentTimeStamp = System.currentTimeMillis();
+                mCameraUploadsHandler.updatePicturesLastSync(currentTimeStamp);
+                mCameraUploadsHandler.updateVideosLastSync(currentTimeStamp);
+            }
+
+            mSourcePath = data.getStringExtra(LocalFolderPickerActivity.EXTRA_PATH);
+            mPrefCameraUploadsSourcePath.setSummary(
+                    DisplayUtils.getPathWithoutLastSlash(mSourcePath)
+            );
+            saveCameraUploadsSourcePathOnPreferences();
+
         } else if (requestCode == ACTION_REQUEST_PASSCODE && resultCode == RESULT_OK) {
+
             String passcode = data.getStringExtra(PassCodeActivity.KEY_PASSCODE);
             if (passcode != null && passcode.length() == 4) {
                 SharedPreferences.Editor appPrefs = PreferenceManager
                         .getDefaultSharedPreferences(getApplicationContext()).edit();
 
                 for (int i = 1; i <= 4; ++i) {
-                    appPrefs.putString(PassCodeActivity.PREFERENCE_PASSCODE_D + i, passcode.substring(i-1, i));
+                    appPrefs.putString(PassCodeActivity.PREFERENCE_PASSCODE_D + i,
+                            passcode.substring(i - 1, i));
                 }
                 appPrefs.putBoolean(PassCodeActivity.PREFERENCE_SET_PASSCODE, true);
                 appPrefs.commit();
-                Toast.makeText(this, R.string.pass_code_stored, Toast.LENGTH_LONG).show();
+                showSnackMessage(R.string.pass_code_stored);
             }
-        } else if (requestCode == ACTION_CONFIRM_PASSCODE && resultCode == RESULT_OK) {
-            if (data.getBooleanExtra(PassCodeActivity.KEY_CHECK_RESULT, false)) {
 
+        } else if (requestCode == ACTION_CONFIRM_PASSCODE && resultCode == RESULT_OK) {
+
+            if (data.getBooleanExtra(PassCodeActivity.KEY_CHECK_RESULT, false)) {
                 SharedPreferences.Editor appPrefs = PreferenceManager
                         .getDefaultSharedPreferences(getApplicationContext()).edit();
                 appPrefs.putBoolean(PassCodeActivity.PREFERENCE_SET_PASSCODE, false);
                 appPrefs.commit();
-
-                Toast.makeText(this, R.string.pass_code_removed, Toast.LENGTH_LONG).show();
+                showSnackMessage(R.string.pass_code_removed);
+            }
+        }
+        else if(requestCode == ACTION_REQUEST_PATTERN && resultCode == RESULT_OK){
+            String patternValue = data.getStringExtra(PatternLockActivity.KEY_PATTERN);
+            if(patternValue != null){
+                SharedPreferences.Editor appPrefs = PreferenceManager.
+                        getDefaultSharedPreferences(getApplicationContext()).edit();
+                appPrefs.putString(PatternLockActivity.KEY_PATTERN,patternValue);
+                appPrefs.putBoolean(PatternLockActivity.PREFERENCE_SET_PATTERN,true);
+                appPrefs.commit();
+                showSnackMessage(R.string.pattern_stored);
+            }
+        }
+        else if(requestCode == ACTION_CONFIRM_PATTERN && resultCode == RESULT_OK){
+            if(data.getBooleanExtra(PatternLockActivity.KEY_CHECK_RESULT,false)){
+                SharedPreferences.Editor appPrefs = PreferenceManager.
+                        getDefaultSharedPreferences(getApplicationContext()).edit();
+                appPrefs.putBoolean(PatternLockActivity.PREFERENCE_SET_PATTERN,false);
+                appPrefs.commit();
+                showSnackMessage(R.string.pattern_removed);
             }
         }
     }
@@ -651,10 +680,12 @@ public class Preferences extends PreferenceActivity
     public void setContentView(@LayoutRes int layoutResID) {
         getDelegate().setContentView(layoutResID);
     }
+
     @Override
     public void setContentView(View view) {
         getDelegate().setContentView(view);
     }
+
     @Override
     public void setContentView(View view, ViewGroup.LayoutParams params) {
         getDelegate().setContentView(view, params);
@@ -691,21 +722,23 @@ public class Preferences extends PreferenceActivity
 
     @Override
     protected void onDestroy() {
-        if (mDownloadServiceConnection != null) {
-            unbindService(mDownloadServiceConnection);
-            mDownloadServiceConnection = null;
-        }
-        if (mUploadServiceConnection != null) {
-            unbindService(mUploadServiceConnection);
-            mUploadServiceConnection = null;
-        }
-
         super.onDestroy();
         getDelegate().onDestroy();
     }
 
     @Override
     protected void onStop() {
+
+        CameraUploadsConfiguration configuration = com.owncloud.android.db.PreferenceManager.
+                getCameraUploadsConfiguration(this);
+
+        if (configuration.isEnabledForPictures() || configuration.isEnabledForVideos()) {
+
+            mCameraUploadsHandler.setCameraUploadsConfig(configuration);
+
+            mCameraUploadsHandler.scheduleCameraUploadsSyncJob();
+        }
+
         super.onStop();
         getDelegate().onStop();
     }
@@ -722,213 +755,123 @@ public class Preferences extends PreferenceActivity
     }
 
     /**
-     * Create the list of accounts that has been added into the app
+     * Load picture upload path set on preferences
      */
-    @SuppressWarnings("deprecation")
-    private void addAccountsCheckboxPreferences() {
-
-        // Remove accounts in case list is refreshing for avoiding to have
-        // duplicate items
-        if (mAccountsPrefCategory.getPreferenceCount() > 0) {
-            mAccountsPrefCategory.removeAll();
-        }
-
-        AccountManager am = (AccountManager) getSystemService(ACCOUNT_SERVICE);
-        Account accounts[] = am.getAccountsByType(MainApp.getAccountType());
-        Account currentAccount = AccountUtils.getCurrentOwnCloudAccount(getApplicationContext());
-
-        if (am.getAccountsByType(MainApp.getAccountType()).length == 0) {
-            // Show create account screen if there isn't any account
-            am.addAccount(MainApp.getAccountType(), null, null, null, this,
-                    null,
-                    null);
-        }
-        else {
-
-            for (Account a : accounts) {
-                RadioButtonPreference accountPreference = new RadioButtonPreference(this);
-                accountPreference.setKey(a.name);
-                // Handle internationalized domain names
-                accountPreference.setTitle(DisplayUtils.convertIdn(a.name, false));
-                mAccountsPrefCategory.addPreference(accountPreference);
-
-                // Check the current account that is being used
-                if (a.name.equals(currentAccount.name)) {
-                    accountPreference.setChecked(true);
-                } else {
-                    accountPreference.setChecked(false);
-                }
-
-                accountPreference.setOnPreferenceChangeListener(new OnPreferenceChangeListener() {
-                    @Override
-                    public boolean onPreferenceChange(Preference preference, Object newValue) {
-                        String key = preference.getKey();
-                        AccountManager am = (AccountManager) getSystemService(ACCOUNT_SERVICE);
-                        Account accounts[] = am.getAccountsByType(MainApp.getAccountType());
-                        for (Account a : accounts) {
-                            RadioButtonPreference p =
-                                    (RadioButtonPreference) findPreference(a.name);
-                            if (key.equals(a.name)) {
-                                boolean accountChanged = !p.isChecked(); 
-                                p.setChecked(true);
-                                AccountUtils.setCurrentOwnCloudAccount(
-                                        getApplicationContext(),
-                                        a.name
-                                );
-                                if (accountChanged) {
-                                    // restart the main activity
-                                    Intent i = new Intent(
-                                            Preferences.this, 
-                                            FileDisplayActivity.class
-                                    );
-                                    i.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-                                    i.addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
-                                    startActivity(i);
-                                } else {
-                                    finish();
-                                }
-                            } else {
-                                p.setChecked(false);
-                            }
-                        }
-                        return (Boolean) newValue;
-                    }
-                });
-
-            }
-
-            // Add Create Account preference at the end of account list if
-            // Multiaccount is enabled
-            if (getResources().getBoolean(R.bool.multiaccount_support)) {
-                createAddAccountPreference();
-            }
-
-        }
-    }
-
-    /**
-     * Create the preference for allow adding new accounts
-     */
-    private void createAddAccountPreference() {
-        Preference addAccountPref = new Preference(this);
-        addAccountPref.setKey("add_account");
-        addAccountPref.setTitle(getString(R.string.prefs_add_account));
-        mAccountsPrefCategory.addPreference(addAccountPref);
-
-        addAccountPref.setOnPreferenceClickListener(new OnPreferenceClickListener() {
-            @Override
-            public boolean onPreferenceClick(Preference preference) {
-                AccountManager am = AccountManager.get(getApplicationContext());
-                am.addAccount(MainApp.getAccountType(), null, null, null, Preferences.this,
-                        null, null);
-                return true;
-            }
-        });
-
-    }
-
-    /**
-     * Load upload path set on preferences
-     */
-    private void loadInstantUploadPath() {
+    private void loadCameraUploadsPicturePath() {
         SharedPreferences appPrefs =
                 PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
-        mUploadPath = appPrefs.getString("instant_upload_path", getString(R.string.instant_upload_path));
-        mPrefInstantUploadPath.setSummary(mUploadPath);
+        mUploadPath = appPrefs.getString("camera_picture_uploads_path", getString(R.string.camera_upload_path));
+        mPrefCameraPictureUploadsPath.setSummary(
+                DisplayUtils.getPathWithoutLastSlash(mUploadPath)
+        );
     }
 
     /**
-     * Save the "Instant Upload Path" on preferences
+     * Save the "Picture upload path" on preferences
      */
-    private void saveInstantUploadPathOnPreferences() {
+    private void saveCameraUploadsPicturePathOnPreferences() {
         SharedPreferences appPrefs =
                 PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
         SharedPreferences.Editor editor = appPrefs.edit();
-        editor.putString("instant_upload_path", mUploadPath);
+        editor.putString("camera_picture_uploads_path", mUploadPath);
         editor.commit();
     }
 
     /**
-     * Load upload video path set on preferences
+     * Load video upload path set on preferences
      */
-    private void loadInstantUploadVideoPath() {
+    private void loadCameraUploadsVideoPath() {
         SharedPreferences appPrefs =
                 PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
-        mUploadVideoPath = appPrefs.getString("instant_video_upload_path", getString(R.string.instant_upload_path));
-        mPrefInstantVideoUploadPath.setSummary(mUploadVideoPath);
+        mUploadVideoPath = appPrefs.getString("camera_video_uploads_path", getString(R.string.camera_upload_path));
+        mPrefCameraVideoUploadsPath.setSummary(
+                DisplayUtils.getPathWithoutLastSlash(mUploadVideoPath)
+        );
     }
 
     /**
-     * Save the "Instant Video Upload Path" on preferences
+     * Save the "Video upload path" on preferences
      */
-    private void saveInstantUploadVideoPathOnPreferences() {
+    private void saveCameraUploadsVideoPathOnPreferences() {
         SharedPreferences appPrefs =
                 PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
         SharedPreferences.Editor editor = appPrefs.edit();
-        editor.putString("instant_video_upload_path", mUploadVideoPath);
+        editor.putString("camera_video_uploads_path", mUploadVideoPath);
         editor.commit();
     }
 
-    // Methods for ComponetsGetter
-    @Override
-    public FileDownloader.FileDownloaderBinder getFileDownloaderBinder() {
-        return mDownloaderBinder;
-    }
-
-
-    @Override
-    public FileUploader.FileUploaderBinder getFileUploaderBinder() {
-        return mUploaderBinder;
-    }
-
-    @Override
-    public OperationsService.OperationsServiceBinder getOperationsServiceBinder() {
-        return null;
-    }
-
-    @Override
-    public FileDataStorageManager getStorageManager() {
-        return null;
-    }
-
-    @Override
-    public FileOperationsHelper getFileOperationsHelper() {
-        return null;
-    }
-
-    protected ServiceConnection newTransferenceServiceConnection() {
-        return new PreferencesServiceConnection();
-    }
-
-    /** Defines callbacks for service binding, passed to bindService() */
-    private class PreferencesServiceConnection implements ServiceConnection {
-
-        @Override
-        public void onServiceConnected(ComponentName component, IBinder service) {
-
-            if (component.equals(new ComponentName(Preferences.this, FileDownloader.class))) {
-                mDownloaderBinder = (FileDownloader.FileDownloaderBinder) service;
-
-            } else if (component.equals(new ComponentName(Preferences.this,
-                    FileUploader.class))) {
-                Log_OC.d(TAG, "Upload service connected");
-                mUploaderBinder = (FileUploader.FileUploaderBinder) service;
+    /**
+     * Load source path set on preferences
+     */
+    private void loadCameraUploadsSourcePath() {
+        SharedPreferences appPrefs =
+                PreferenceManager.getDefaultSharedPreferences(this);
+        mSourcePath = appPrefs.getString(
+                "camera_uploads_source_path",
+                CameraUploadsConfiguration.DEFAULT_SOURCE_PATH
+        );
+        if (mPrefCameraUploadsSourcePath != null) {
+            mPrefCameraUploadsSourcePath.setSummary(
+                    DisplayUtils.getPathWithoutLastSlash(mSourcePath)
+            );
+            String comment;
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N) {
+                comment = getString(R.string.prefs_camera_upload_source_path_title_optional);
             } else {
-                return;
+                comment = getString(R.string.prefs_camera_upload_source_path_title_required);
             }
-
+            mPrefCameraUploadsSourcePath.setTitle(
+                    String.format(mPrefCameraUploadsSourcePath.getTitle().toString(), comment)
+            );
         }
+    }
 
-        @Override
-        public void onServiceDisconnected(ComponentName component) {
-            if (component.equals(new ComponentName(Preferences.this, FileDownloader.class))) {
-                Log_OC.d(TAG, "Download service suddenly disconnected");
-                mDownloaderBinder = null;
-            } else if (component.equals(new ComponentName(Preferences.this,
-                    FileUploader.class))) {
-                Log_OC.d(TAG, "Upload service suddenly disconnected");
-                mUploaderBinder = null;
-            }
-        }
-    };
+    /**
+     * Save the "Camera folder" path on preferences
+     */
+    private void saveCameraUploadsSourcePathOnPreferences() {
+        SharedPreferences appPrefs =
+                PreferenceManager.getDefaultSharedPreferences(this);
+        SharedPreferences.Editor editor = appPrefs.edit();
+        editor.putString("camera_uploads_source_path", mSourcePath);
+        editor.commit();
+    }
+
+
+    /**
+     * Show a temporary message in a Snackbar bound to the content view
+     *
+     * @param messageResource       Message to show.
+     */
+    private void showSnackMessage(int messageResource) {
+        Snackbar snackbar = Snackbar.make(
+                findViewById(android.R.id.content),
+                messageResource,
+                Snackbar.LENGTH_LONG
+        );
+        snackbar.show();
+    }
+
+    /**
+     * Show a confirmation dialog to disable camera uploads
+     * @param builder alert dialog to show
+     * @param message message to show in the dialog
+     * @param listener to handle button clicks
+     */
+    private void showConfirmationDialog(AlertDialog builder, String message, DialogInterface.OnClickListener listener) {
+
+        builder.setTitle(R.string.confirmation_disable_camera_uploads_title);
+        builder.setMessage(message);
+        builder.setButton(DialogInterface.BUTTON_NEGATIVE, getString(R.string.common_no), listener);
+        builder.setButton(DialogInterface.BUTTON_POSITIVE, getString(R.string.common_yes), listener);
+        builder.show();
+    }
+
+    /**
+     * Dismiss a confirmation dialog
+     * @param builder alert dialog to dismiss
+     */
+    private void dismissConfirmationDialog(AlertDialog builder) {
+        builder.dismiss();
+    }
 }

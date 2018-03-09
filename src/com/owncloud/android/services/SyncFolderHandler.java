@@ -1,7 +1,7 @@
 /**
  *   ownCloud Android client application
  *
- *   Copyright (C) 2016 ownCloud Inc.
+ *   Copyright (C) 2016 ownCloud GmbH.
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License version 2,
@@ -25,6 +25,7 @@ import android.content.Intent;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
+import android.support.v4.content.LocalBroadcastManager;
 import android.util.Pair;
 
 import com.owncloud.android.datamodel.FileDataStorageManager;
@@ -37,6 +38,7 @@ import com.owncloud.android.lib.common.OwnCloudClientManagerFactory;
 import com.owncloud.android.lib.common.operations.RemoteOperationResult;
 import com.owncloud.android.lib.common.utils.Log_OC;
 import com.owncloud.android.operations.SynchronizeFolderOperation;
+import com.owncloud.android.utils.Extras;
 import com.owncloud.android.utils.FileStorageUtils;
 
 import java.io.IOException;
@@ -61,6 +63,7 @@ class SyncFolderHandler extends Handler {
     private Account mCurrentAccount = null;
     private FileDataStorageManager mStorageManager;
     private SynchronizeFolderOperation mCurrentSyncOperation;
+    private LocalBroadcastManager mLocalBroadcastManager;
 
 
     public SyncFolderHandler(Looper looper, OperationsService service) {
@@ -69,6 +72,9 @@ class SyncFolderHandler extends Handler {
             throw new IllegalArgumentException("Received invalid NULL in parameter 'service'");
         }
         mService = service;
+
+        // create manager for local broadcasts
+        mLocalBroadcastManager = LocalBroadcastManager.getInstance(mService);
     }
 
 
@@ -179,11 +185,11 @@ class SyncFolderHandler extends Handler {
      */
     private void sendBroadcastNewSyncFolder(Account account, String remotePath) {
         Intent added = new Intent(FileDownloader.getDownloadAddedMessage());
-        added.putExtra(FileDownloader.ACCOUNT_NAME, account.name);
-        added.putExtra(FileDownloader.EXTRA_REMOTE_PATH, remotePath);
-        added.putExtra(FileDownloader.EXTRA_FILE_PATH, FileStorageUtils.getSavePath(account.name)
+        added.putExtra(Extras.EXTRA_ACCOUNT_NAME, account.name);
+        added.putExtra(Extras.EXTRA_REMOTE_PATH, remotePath);
+        added.putExtra(Extras.EXTRA_FILE_PATH, FileStorageUtils.getSavePath(account.name)
                 + remotePath);
-        mService.sendStickyBroadcast(added);
+        mLocalBroadcastManager.sendBroadcast(added);
     }
 
     /**
@@ -193,13 +199,11 @@ class SyncFolderHandler extends Handler {
     private void sendBroadcastFinishedSyncFolder(Account account, String remotePath,
                                                  boolean success) {
         Intent finished = new Intent(FileDownloader.getDownloadFinishMessage());
-        finished.putExtra(FileDownloader.ACCOUNT_NAME, account.name);
-        finished.putExtra(FileDownloader.EXTRA_REMOTE_PATH, remotePath);
-        finished.putExtra(FileDownloader.EXTRA_FILE_PATH,
+        finished.putExtra(Extras.EXTRA_ACCOUNT_NAME, account.name);
+        finished.putExtra(Extras.EXTRA_REMOTE_PATH, remotePath);
+        finished.putExtra(Extras.EXTRA_FILE_PATH,
                 FileStorageUtils.getSavePath(account.name) + remotePath);
-        finished.putExtra(FileDownloader.EXTRA_DOWNLOAD_RESULT, success);
-        mService.sendStickyBroadcast(finished);
+        finished.putExtra(Extras.EXTRA_DOWNLOAD_RESULT, success);
+        mLocalBroadcastManager.sendBroadcast(finished);
     }
-
-
 }

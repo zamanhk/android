@@ -1,3 +1,5 @@
+### Setup Information
+
 These instructions will help you to set up your development environment, get the source code of the ownCloud for Android app and build it by yourself. If you want to help developing the app take a look to the [contribution guidelines][0].
 
 Sections 1) and 2) are common for any environment. The rest of the sections describe how to set up a project in different tool environments. Nowadays we recommend to use Android Studio (section 2), but you can also build the app from the command line (section 3).
@@ -16,8 +18,8 @@ The [Android SDK][3] is necessary to build the app. There are different options 
 Open a terminal and type 'android' to start the Android SDK Manager. To build the ownCloud for Android app you will need to install at least the next SDK packages:
 
 * Android SDK Tools and Android SDK Platform-tools (already installed); upgrade to their last versions is usually a good idea.
-* Android SDK Build-Tools; any version from 23 or later should work fine; avoid preview versions, if any available.
-* Android 6.0 (API 23), SDK Platform; needed to build the owncloud app.
+* Android SDK Build-Tools 24.0.2.
+* Android 7.0 (API 24), SDK Platform; needed to build the owncloud app.
 
 Install any other package you consider interesting, such as emulators.
 

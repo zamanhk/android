@@ -13,12 +13,7 @@
   <string name="actionbar_send_file">Saada</string>
   <string name="actionbar_sort">Sorteeri</string>
   <string name="actionbar_sort_title">Sorteeri</string>
-  <string-array name="actionbar_sortby">
-    <item>A-Z</item>
-    <item>Uuem - vanem</item>
-  </string-array>
-  <!--TODO re-enable when server-side folder size calculation is available   
-    	<item>Biggest - Smallest</item>-->
+  <string name="actionbar_sort_by_name">A-Z</string>
   <!--TODO re-enable when "Accounts" is available in Navigation Drawer-->
   <!--<string name="drawer_item_accounts">Accounts</string>-->
   <string name="drawer_item_all_files">Kõik failid</string>
@@ -30,13 +25,10 @@
   <string name="drawer_open">Ava</string>
   <string name="prefs_category_general">Üldine</string>
   <string name="prefs_category_more">Rohkem</string>
+  <string name="prefs_category_security">Turvalisus</string>
   <string name="prefs_accounts">Kontod</string>
   <string name="prefs_manage_accounts">Halda kontosid</string>
   <string name="prefs_passcode">Parooli lukk</string>
-  <string name="prefs_instant_upload">Piltide kohene üleslaadimine</string>
-  <string name="prefs_instant_upload_summary">Laadi koheselt üles kaameraga tehtud pildid</string>
-  <string name="prefs_instant_video_upload">Videote kohene üleslaadimine</string>
-  <string name="prefs_instant_video_upload_summary">Laadi koheselt üles kaameraga tehtud videod</string>
   <string name="prefs_log_title">Luba logimine</string>
   <string name="prefs_log_summary">Kasutatakse probleemide logimiseks</string>
   <string name="prefs_log_title_history">Logimise ajalugu</string>
@@ -58,10 +50,11 @@
   <string name="sync_string_files">Failid</string>
   <string name="setup_btn_connect">Ühenda</string>
   <string name="uploader_btn_upload_text">Lae üles</string>
-  <string name="uploader_top_message">Vali kataloog serveris: </string>
+  <string name="uploader_top_message">Vali üleslaadimiste kaust</string>
   <string name="uploader_wrn_no_account_title">Kontot ei leitud</string>
   <string name="uploader_wrn_no_account_setup_btn_text">Seadista</string>
   <string name="uploader_wrn_no_account_quit_btn_text">Lõpeta</string>
+  <string name="uploader_error_title_no_file_to_upload">Ühtegi faili ei laaditud</string>
   <string name="file_list_seconds_ago">sekundit tagasi</string>
   <string name="file_list_empty">Siin pole midagi. Lae midagi üles!</string>
   <string name="file_list_loading">Laadimine...</string>
@@ -76,7 +69,7 @@
   <string name="filedetails_created">Loodud:</string>
   <string name="filedetails_modified">Muudetud:</string>
   <string name="filedetails_download">Lae alla</string>
-  <string name="filedetails_sync_file">Sünrooni</string>
+  <string name="filedetails_sync_file">Sünkrooni</string>
   <string name="filedetails_renamed_in_upload_msg">Fail nimetati üleslaadimise käigus ümber %1$ </string>
   <string name="list_layout">Nimekiri</string>
   <string name="action_share">Jaga</string>
@@ -90,6 +83,7 @@
   <string name="common_loading">Laadimine ...</string>
   <string name="common_unknown">tundmatu</string>
   <string name="common_error_unknown">Tundmatu viga</string>
+  <string name="common_pending">Ootel</string>
   <string name="about_title">Info</string>
   <string name="change_password">Muuda parooli</string>
   <string name="delete_account">Eemalda konto</string>
@@ -101,9 +95,11 @@
   <string name="uploader_upload_succeeded_ticker">Üleslaadimine oli edukas</string>
   <string name="uploader_upload_failed_ticker">Üleslaadimine ebaõnnestus</string>
   <string name="uploader_upload_failed_content_single">%1$s üleslaadimise lõpetamine ebaõnnestus</string>
+  <string name="uploader_upload_text_filename_hint">Failinimi</string>
   <string name="uploads_view_title">Üleslaadimised</string>
   <string name="uploads_view_group_current_uploads">Praegune</string>
   <string name="uploads_view_group_finished_uploads">Üles laetud</string>
+  <string name="uploads_view_group_file_count">%d faili</string>
   <string name="uploads_view_upload_status_succeeded">Lõpetatud</string>
   <string name="uploads_view_upload_status_cancelled">Tühistatud</string>
   <string name="uploads_view_upload_status_paused">Peatatud</string>
@@ -178,11 +174,8 @@ Allpool on loend kohalikest failidest ning serveris asuvatest failidest %5$s, mi
   <string name="auth_account_not_new">Sama konto  kasutaja ja server on juba selles seadmes olemas</string>
   <string name="auth_account_not_the_same">Sisestatud kasutaja ei kattu selle konto kasutajaga</string>
   <string name="auth_unknown_error_title">Tekkis tundmatu tõrge!</string>
-  <string name="auth_unknown_host_title">Hosti ei leitud</string>
   <string name="auth_incorrect_path_title">server protsessi ei leitud</string>
-  <string name="auth_timeout_title">Serveri vastus võttis liiga kaua aega</string>
   <string name="auth_ssl_general_error_title">SSL-i käivitamine ebaõnnestus</string>
-  <string name="auth_ssl_unverified_server_title">Serveri SSL identiteedi tuvastamine ebaõnnestus</string>
   <string name="auth_bad_oc_version_title">Tundmatu serveri versioon</string>
   <string name="auth_wrong_connection_title">Ühenduse loomine ebaõnnestus</string>
   <string name="auth_secure_connection">Saavutati turvaline ühendus</string>
@@ -198,9 +191,11 @@ Allpool on loend kohalikest failidest ning serveris asuvatest failidest %5$s, mi
   <string name="auth_account_does_not_exist">Kontot pole veel seadmes</string>
   <string name="common_rename">Nimeta ümber</string>
   <string name="common_remove">Eemalda</string>
-  <string name="confirmation_remove_alert">Oled sa kindel, et soovid %1$s eemaldada?</string>
+  <string name="confirmation_remove_file_alert">Oled sa kindel, et soovid %1$s eemaldada?</string>
   <string name="confirmation_remove_folder_alert">Kas sa tõesti soovid eemaldada %1$s ja selle sisu?</string>
   <string name="confirmation_remove_local">Ainult kohalik</string>
+  <string name="confirmation_remove_public_share_title">Eemalda link</string>
+  <string name="confirmation_remove_public_share_message">Oled sa kindel, et soovid %1$s eemaldada?</string>
   <string name="remove_success_msg">Eemaldamine oli edukas</string>
   <string name="remove_fail_msg">Eemaldamine ebaõnnestus</string>
   <string name="rename_dialog_title">Sisesta uus nimi</string>
@@ -218,8 +213,6 @@ Allpool on loend kohalikest failidest ning serveris asuvatest failidest %5$s, mi
   <string name="activity_chooser_title">Saada link</string>
   <string name="wait_for_tmp_copy_from_private_storage">Faili kopeerimine privaatsest salvestusalast</string>
   <string name="oauth_check_onoff">Logi sisse oAuth2-ga</string>
-  <string name="oauth_login_connection">oAuth2 serveriga ühendumine...</string>
-  <string name="ssl_validator_header">Saidi identiteeti ei suudetud kinnitada</string>
   <string name="ssl_validator_reason_cert_not_trusted">- Serveri sertifikaat pole usaldusväärne</string>
   <string name="ssl_validator_reason_cert_expired">- Serveri sertifikaat on aegunud</string>
   <string name="ssl_validator_reason_cert_not_yet_valid">- Serveri sertifikaat kehtivad kuupäevad on alles tulevikus</string>
@@ -244,14 +237,13 @@ Allpool on loend kohalikest failidest ning serveris asuvatest failidest %5$s, mi
   <string name="ssl_validator_label_certificate_fingerprint">Sõrmejälg:</string>
   <string name="certificate_load_problem">Tekkis tõrge sertifikaadi laadimisel.</string>
   <string name="ssl_validator_null_cert">Ei suuda kuvada sertifikaati.</string>
-  <string name="ssl_validator_no_info_about_error">- Vea kohta puudub info</string>
+  <string name="ssl_validator_no_info_about_error">- Info vea kohta puudub</string>
   <string name="placeholder_sentence">See on kohahoidja</string>
   <string name="placeholder_filename">placeholder.txt</string>
   <string name="placeholder_filetype">PNG pilt</string>
   <string name="placeholder_filesize">389 KB</string>
   <string name="placeholder_timestamp">2012/05/18 12:23 PM</string>
   <string name="placeholder_media_time">12:23:45</string>
-  <string name="instant_upload_path">/InstantUpload</string>
   <string name="conflict_title">Failikonflikt</string>
   <string name="conflict_message">Millist faili sa soovid säilitada? Kui valid mõlemad versioonid, siis lisatakse kohaliku faili nimele number.</string>
   <string name="conflict_keep_both">Säilita mõlemad</string>
@@ -273,10 +265,7 @@ Allpool on loend kohalikest failidest ning serveris asuvatest failidest %5$s, mi
   <string name="clipboard_text_copied">Kopeeritud lõikepuhvrisse</string>
   <string name="error_cant_bind_to_operations_service">Viga: ei suutnud operatsiooni lõpetada</string>
   <string name="network_error_socket_exception">Serveriga ühendumisel tekkis tõrge.</string>
-  <string name="network_error_socket_timeout_exception">Serverilt vastuse ootamisel tekkis tõrge, toimingu sooritamine ebaõnnestus</string>
-  <string name="network_error_connect_timeout_exception">Serverilt vastuse ootamisel tekkis tõrge, toimingu sooritamine ebaõnnestus</string>
-  <string name="network_host_not_available">Toimingu lõpetamine ebaõnnestus, server pole saadaval</string>
-  <string name="empty"></string>
+  <string name="network_error_socket_timeout_exception">Serveri vastus võttis liiga kaua aega</string>
   <string name="forbidden_permissions">Sul ei ole %s õigusi</string>
   <string name="forbidden_permissions_rename">selle faili ümbernimetamiseks</string>
   <string name="forbidden_permissions_delete">selle faili kustutamiseks</string>
@@ -287,6 +276,7 @@ Allpool on loend kohalikest failidest ning serveris asuvatest failidest %5$s, mi
   <string name="downloader_download_file_not_found">Fail ei ole serveris enam kättesaadav</string>
   <string name="prefs_category_accounts">Kontod</string>
   <string name="prefs_add_account">Lisa konto</string>
+  <string name="drawer_manage_accounts">Halda kontosid</string>
   <string name="auth_redirect_non_secure_connection_title">Turvalist ühendust suunatakse läbi turvamata ühenduse.</string>
   <string name="actionbar_logger">Logid</string>
   <string name="log_send_history_button">Saada ajalugu</string>
@@ -307,7 +297,6 @@ Allpool on loend kohalikest failidest ning serveris asuvatest failidest %5$s, mi
   <string name="copy_file_invalid_overwrite">See fail on juba sihtkaustas olemas</string>
   <string name="copy_file_error">Selle faili või kausta kopeerimisel tekkis tõrge</string>
   <string name="forbidden_permissions_copy">et kopeerida seda faili</string>
-  <string name="prefs_category_instant_uploading">Kohesed üleslaadimised</string>
   <string name="prefs_category_details">Üksikasjad</string>
   <string name="shared_subject_header">jagatud</string>
   <string name="with_you_subject_header">sinuga</string>
@@ -325,21 +314,22 @@ Allpool on loend kohalikest failidest ning serveris asuvatest failidest %5$s, mi
   <string name="file_list__footer__files">%1$d faili</string>
   <string name="file_list__footer__files_and_folder">%1$d faili, 1 kaust</string>
   <string name="file_list__footer__files_and_folders">%1$d faili, %2$d kausta</string>
-  <string name="prefs_instant_behaviour_dialogTitle">Algne fail...</string>
-  <string name="prefs_instant_behaviour_title">Algne fail...</string>
+  <string name="prefs_camera_upload_behaviour_dialogTitle">Algne fail...</string>
+  <string name="prefs_camera_upload_behaviour_title">Algne fail...</string>
   <string name="upload_copy_files">Kopeeri fail</string>
   <string name="upload_move_files">Liiguta fail</string>
   <string name="pref_behaviour_entries_keep_file">hoitakse algses kaustas</string>
   <string name="pref_behaviour_entries_move">liigutatakse rakenduse kausta</string>
-  <string name="share_dialog_title">Jagamine</string>
-  <string name="share_with_user_section_title">Jaga kasutajate ja gruppidega</string>
+  <string name="share_dialog_title">Jaga</string>
   <string name="share_no_users">Kasutajatega pole veel midagi jagatud</string>
   <string name="share_add_user_or_group">Lisa kasutaja või grupp</string>
-  <string name="share_via_link_section_title">Jaga linki</string>
-  <string name="share_via_link_expiration_date_label">Määra aegumise kuupäev</string>
-  <string name="share_via_link_password_label">Parooliga kaitstud</string>
+  <string name="share_cancel_public_link_button">Loobu</string>
+  <string name="share_confirm_public_link_button">Salvesta</string>
+  <string name="share_via_link_expiration_date_label">Aegumine</string>
+  <string name="share_via_link_password_label">Parool</string>
   <string name="share_via_link_password_title">Turvatud</string>
   <string name="share_via_link_edit_permission_label">Luba muutmine</string>
+  <string name="share_via_link_show_file_listing_label">Näita failide nimekirja</string>
   <string name="share_get_public_link_button">Hangi link</string>
   <string name="share_with_title">Jaga ...</string>
   <string name="share_search">Otsi</string>

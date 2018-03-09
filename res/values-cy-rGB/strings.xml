@@ -5,8 +5,6 @@
   <string name="actionbar_upload_files">Ffeiliau</string>
   <string name="actionbar_settings">Gosodiadau</string>
   <string name="actionbar_send_file">Anfon</string>
-  <!--TODO re-enable when server-side folder size calculation is available   
-    	<item>Biggest - Smallest</item>-->
   <!--TODO re-enable when "Accounts" is available in Navigation Drawer-->
   <!--<string name="drawer_item_accounts">Accounts</string>-->
   <!--TODO re-enable when "On Device" is available
@@ -39,6 +37,7 @@
   <string name="common_ok">Iawn</string>
   <string name="common_cancel">Diddymu</string>
   <string name="common_error">Gwall</string>
+  <string name="common_pending">I ddod</string>
   <string name="about_title">Ynglyn â</string>
   <string name="create_account">Creu cyfrif</string>
   <string name="upload_chooser_title">Llwytho i fyny o ...</string>
@@ -68,9 +67,7 @@
   <string name="auth_connection_established">Sefydlwyd y cysylltiad</string>
   <string name="auth_not_configured_title">Cyfluniad gweinydd wedi\'i gamffurfio</string>
   <string name="auth_unknown_error_title">Digwyddodd gwall anhysbys!</string>
-  <string name="auth_unknown_host_title">Methwyd canfod gwesteiwr</string>
   <string name="auth_incorrect_path_title">Enghraifft o\'r gweinydd heb ei ganfod</string>
-  <string name="auth_timeout_title">Cymrodd y gweinydd rhy hir i ymateb</string>
   <string name="auth_ssl_general_error_title">Methwyd ymgychwyn SSL</string>
   <string name="auth_bad_oc_version_title">Fersiwn gweinydd heb ei gydnabod</string>
   <string name="auth_wrong_connection_title">Methwyd creu cysylltiad</string>
@@ -88,7 +85,6 @@
   <string name="wait_a_moment">Arhoswch eiliad</string>
   <string name="filedisplay_unexpected_bad_get_content">Gwall annisgwyl ; dewiswch y ffeil o ap gwahanol</string>
   <string name="filedisplay_no_file_selected">Ni ddewiswyd ffeil</string>
-  <string name="ssl_validator_header">Methwyd gwirio hunaniaeth y safle</string>
   <string name="ssl_validator_reason_cert_not_trusted">- Nid yw tystysgrif y gweinydd yn ddibynadwy</string>
   <string name="ssl_validator_reason_cert_expired">- Mae tystysgrif y gweinydd wedi dod i ben</string>
   <string name="ssl_validator_reason_cert_not_yet_valid">- Mae dyddiadau dilysrwydd tystysgrif y gweinydd yn y dyfodol</string>
@@ -110,15 +106,16 @@
   <string name="ssl_validator_label_validity_to">I:</string>
   <string name="ssl_validator_label_signature">Llofnod:</string>
   <string name="ssl_validator_label_signature_algorithm">Algorithm:</string>
-  <string name="instant_upload_path">/LlwythoSyth</string>
   <string name="conflict_keep_both">Cadw\'r ddau</string>
   <string name="activity_chooser_send_file_title">Anfon</string>
-  <string name="empty"></string>
+  <string name="network_error_socket_timeout_exception">Cymrodd y gweinydd rhy hir i ymateb</string>
   <string name="prefs_category_accounts">Cyfrifon</string>
   <string name="folder_picker_choose_button_text">Dewisiwch</string>
   <string name="prefs_category_details">Manylion</string>
-  <string name="share_via_link_expiration_date_label">Gosod dyddiad dod i ben</string>
-  <string name="share_via_link_password_label">Diogelu cyfrinair</string>
+  <string name="share_dialog_title">Rhannu</string>
+  <string name="share_cancel_public_link_button">Diddymu</string>
+  <string name="share_confirm_public_link_button">Cadw</string>
+  <string name="share_via_link_password_label">Cyfrinair</string>
   <string name="share_search">Chwilio</string>
   <string name="share_privilege_can_edit">yn gallu golygu</string>
   <string name="share_privilege_can_edit_create">creu</string>

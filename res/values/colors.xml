@@ -3,7 +3,7 @@
   ownCloud Android client application
 
   Copyright (C) 2012  Bartek Przybylski
-  Copyright (C) 2015 ownCloud Inc.
+  Copyright (C) 2016 ownCloud GmbH.
 
   This program is free software: you can redistribute it and/or modify
   it under the terms of the GNU General Public License version 2,
@@ -19,7 +19,14 @@
 -->
 <resources>
 
-    <color name="owncloud_blue">@color/actionbar_start_color</color>
+    <!-- standard material color definitions -->
+    <color name="primary">@color/owncloud_blue</color>
+    <color name="primary_dark">#162233</color>
+    <color name="color_accent">@color/owncloud_blue_accent</color>
+
+
+    <!-- Colors -->
+    <color name="owncloud_blue">#1D2D44</color>
     <color name="owncloud_blue_accent">#35537A</color>
     <color name="owncloud_blue_bright">#00ddff</color>
 
@@ -40,16 +47,18 @@
     <color name="secondaryTextColor">#a0a0a0</color>
     <color name="listItemHighlighted">#f8f8f8</color>
     <color name="highlightTextColor">#55739a</color>
+    <color name="grey"> #B0BEC5 </color>
 
-    <!-- Colors -->
-    <color name="color_accent">@color/owncloud_blue_accent</color>
     <color name="dialog_list_item">#1F1F1F</color>
-
-    <!-- standard material color definitions -->
-    <color name="primary">@color/owncloud_blue</color>
-    <color name="primary_dark">#162233</color>
 
     <!-- special transparent action bar colors for image preview -->
     <color name="owncloud_blue_transparent">#201D2D44</color>
     <color name="owncloud_blue_dark_transparent">#40162233</color>
+
+    <!-- Multiselect backgrounds -->
+    <color name="selected_item_background">#ECECEC</color>
+
+    <!-- Warning message background -->
+    <color name="warning_background_color">#E0E0E0</color>
+
 </resources>

@@ -2,7 +2,7 @@
  *   ownCloud Android client application
  *
  *   @author masensio
- *   Copyright (C) 2015 ownCloud Inc.
+ *   Copyright (C) 2016 ownCloud GmbH.
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License version 2,
@@ -113,7 +113,4 @@ public class ShareUserListAdapter extends ArrayAdapter {
         void unshareButtonPressed(OCShare share);
         void editShare(OCShare share);
     }
-
-
-
 }

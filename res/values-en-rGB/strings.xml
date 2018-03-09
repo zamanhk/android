@@ -13,12 +13,9 @@
   <string name="actionbar_send_file">Send</string>
   <string name="actionbar_sort">Sort</string>
   <string name="actionbar_sort_title">Sort by</string>
-  <string-array name="actionbar_sortby">
-    <item>A-Z</item>
-    <item>Newest - Oldest</item>
-  </string-array>
-  <!--TODO re-enable when server-side folder size calculation is available   
-    	<item>Biggest - Smallest</item>-->
+  <string name="actionbar_sort_by_name">A-Z</string>
+  <string name="actionbar_sort_by_date">Newest - Oldest</string>
+  <string name="actionbar_sort_by_size">Biggest - Smallest</string>
   <!--TODO re-enable when "Accounts" is available in Navigation Drawer-->
   <!--<string name="drawer_item_accounts">Accounts</string>-->
   <string name="drawer_item_all_files">All files</string>
@@ -30,13 +27,10 @@
   <string name="drawer_open">Open</string>
   <string name="prefs_category_general">General</string>
   <string name="prefs_category_more">More</string>
+  <string name="prefs_category_security">Security</string>
   <string name="prefs_accounts">Accounts</string>
   <string name="prefs_manage_accounts">Manage accounts</string>
   <string name="prefs_passcode">Passcode lock</string>
-  <string name="prefs_instant_upload">Instant picture uploads</string>
-  <string name="prefs_instant_upload_summary">Instantly upload pictures taken by camera</string>
-  <string name="prefs_instant_video_upload">Instant video uploads</string>
-  <string name="prefs_instant_video_upload_summary">Instantly upload videos recorded by camera</string>
   <string name="prefs_log_title">Enable logging</string>
   <string name="prefs_log_summary">This is used to log problems</string>
   <string name="prefs_log_title_history">Logging history</string>
@@ -58,7 +52,7 @@
   <string name="sync_string_files">Files</string>
   <string name="setup_btn_connect">Connect</string>
   <string name="uploader_btn_upload_text">Upload</string>
-  <string name="uploader_top_message">Choose upload folder:</string>
+  <string name="uploader_top_message">Choose upload folder</string>
   <string name="uploader_wrn_no_account_title">No account found</string>
   <string name="uploader_wrn_no_account_text">There are no %1$s accounts on your device. Please set up an account first.</string>
   <string name="uploader_wrn_no_account_setup_btn_text">Setup</string>
@@ -69,12 +63,12 @@
   <string name="uploader_error_title_file_cannot_be_uploaded">File cannot be uploaded</string>
   <string name="uploader_error_message_read_permission_not_granted">%1$s is not allowed to read a received file</string>
   <string name="uploader_error_message_source_file_not_found">File to upload was not found in its location. Please check whether the file exists.</string>
-  <string name="uploader_error_message_source_file_not_copied">An error occurred while copying the file to a temporary folder. Please try to send again.</string>
+  <string name="uploader_error_message_source_file_not_copied">An error occurred whilst copying the file to a temporary folder. Please try to send again.</string>
   <string name="file_list_seconds_ago">seconds ago</string>
   <string name="file_list_empty">Nothing in here. Upload something!</string>
   <string name="file_list_loading">Loading…</string>
-  <string name="file_list_no_app_for_file_type">No app found for file type!</string>
   <string name="local_file_list_empty">There are no files in this folder.</string>
+  <string name="local_file_list_empty_just_folders">There are no folders in this folder.</string>
   <string name="upload_list_empty">No uploads available.</string>
   <string name="file_list_folder">folder</string>
   <string name="file_list_folders">folders</string>
@@ -103,6 +97,7 @@
   <string name="common_loading">Loading …</string>
   <string name="common_unknown">unknown</string>
   <string name="common_error_unknown">Unknown error</string>
+  <string name="common_pending">Pending</string>
   <string name="about_title">About</string>
   <string name="change_password">Change password</string>
   <string name="delete_account">Remove account</string>
@@ -116,6 +111,7 @@
   <string name="uploader_upload_failed_ticker">Upload failed</string>
   <string name="uploader_upload_failed_content_single">Upload of %1$s could not be completed</string>
   <string name="uploader_upload_failed_credentials_error">Upload failed, you need to log in again</string>
+  <string name="uploader_upload_text_filename_hint">Filename</string>
   <string name="uploads_view_title">Uploads</string>
   <string name="uploads_view_group_current_uploads">Current</string>
   <string name="uploads_view_group_failed_uploads">Failed (tap to retry)</string>
@@ -200,12 +196,9 @@
   <string name="auth_account_not_new">An account for the same user and server already exists on the device</string>
   <string name="auth_account_not_the_same">The entered user does not match the user of this account</string>
   <string name="auth_unknown_error_title">Unknown error occurred!</string>
-  <string name="auth_unknown_host_title">Couldn\'t find host</string>
   <string name="auth_incorrect_path_title">Server instance not found</string>
-  <string name="auth_timeout_title">The server took too long to respond</string>
   <string name="auth_incorrect_address_title">Wrong server address format</string>
   <string name="auth_ssl_general_error_title">SSL initialisation failed</string>
-  <string name="auth_ssl_unverified_server_title">Couldn\'t verify SSL server\'s identity</string>
   <string name="auth_bad_oc_version_title">Unrecognised server version</string>
   <string name="auth_wrong_connection_title">Couldn\'t establish connection</string>
   <string name="auth_secure_connection">Secure connection established</string>
@@ -223,14 +216,19 @@
 	</string>
   <string name="auth_can_not_auth_against_server">Cannot authenticate to this server</string>
   <string name="auth_account_does_not_exist">Account does not exist in the device yet</string>
+  <string name="set_available_offline">Set as available offline</string>
+  <string name="unset_available_offline">Unset as available offline</string>
   <string name="common_rename">Rename</string>
   <string name="common_remove">Remove</string>
-  <string name="confirmation_remove_alert">Do you really want to remove %1$s?</string>
+  <string name="confirmation_remove_file_alert">Do you really want to remove %1$s?</string>
   <string name="confirmation_remove_folder_alert">Do you really want to remove %1$s and its contents?</string>
   <string name="confirmation_remove_local">Local only</string>
+  <string name="confirmation_remove_account_alert">Do you really want to remove the account %1$s?</string>
+  <string name="confirmation_remove_public_share_message">Do you really want to remove %1$s?</string>
   <string name="remove_success_msg">Removal succeeded</string>
   <string name="remove_fail_msg">Removal failed</string>
   <string name="rename_dialog_title">Enter a new name</string>
+  <string name="available_offline_inherited_msg">A folder that contains this file is available offline</string>
   <string name="rename_local_fail_msg">Local copy could not be renamed; try a different name</string>
   <string name="rename_server_fail_msg">Rename could not be completed</string>
   <string name="sync_file_fail_msg">Remote file could not be checked</string>
@@ -246,8 +244,6 @@
   <string name="activity_chooser_title">Send link to …</string>
   <string name="wait_for_tmp_copy_from_private_storage">Copying file from private storage</string>
   <string name="oauth_check_onoff">Log in with oAuth2</string>
-  <string name="oauth_login_connection">Connecting to oAuth2 server…</string>
-  <string name="ssl_validator_header">The identity of the site could not be verified</string>
   <string name="ssl_validator_reason_cert_not_trusted">- The server certificate is not trusted</string>
   <string name="ssl_validator_reason_cert_expired">- The server certificate expired</string>
   <string name="ssl_validator_reason_cert_not_yet_valid">- The server certificate valid dates are in the future</string>
@@ -280,9 +276,8 @@
   <string name="placeholder_filesize">389 KB</string>
   <string name="placeholder_timestamp">2012/05/18 12:23 PM</string>
   <string name="placeholder_media_time">12:23:45</string>
-  <string name="instant_upload_on_wifi">Upload pictures via wifi only</string>
-  <string name="instant_video_upload_on_wifi">Upload videos via wifi only</string>
-  <string name="instant_upload_path">/InstantUpload</string>
+  <string name="camera_picture_upload_on_wifi">Upload pictures via wifi only</string>
+  <string name="camera_video_upload_on_wifi">Upload videos via wifi only</string>
   <string name="conflict_title">File conflict</string>
   <string name="conflict_message">Which files do you want to keep? If you select both versions, the local file will have a number added to its name.</string>
   <string name="conflict_keep_both">Keep both</string>
@@ -291,7 +286,6 @@
   <string name="preview_image_description">Image preview</string>
   <string name="preview_image_error_unknown_format">This image cannot be shown</string>
   <string name="error__upload__local_file_not_copied">%1$s could not be copied to %2$s local folder</string>
-  <string name="prefs_instant_upload_path_title">Upload path</string>
   <string name="share_link_no_support_share_api">Sorry, sharing is not enabled on your server. Please contact your
 		administrator.</string>
   <string name="share_link_file_no_exist">Unable to share. Please check whether the file exists</string>
@@ -306,14 +300,11 @@
   <string name="copy_link">Copy link</string>
   <string name="clipboard_text_copied">Copied to clipboard</string>
   <string name="clipboard_no_text_to_copy">No text received to copy to clipboard</string>
-  <string name="clipboard_uxexpected_error">Unexpected error while copying to clipboard</string>
+  <string name="clipboard_uxexpected_error">Unexpected error whilst copying to clipboard</string>
   <string name="clipboard_label">Text copied from %1$s</string>
   <string name="error_cant_bind_to_operations_service">Critical error: cannot perform operations</string>
   <string name="network_error_socket_exception">An error occurred whilst connecting to the server.</string>
-  <string name="network_error_socket_timeout_exception">An error occurred whilst waiting for the server, the operation couldn\'t be done</string>
-  <string name="network_error_connect_timeout_exception">An error occurred whilst waiting for the server, the operation couldn\'t been done</string>
-  <string name="network_host_not_available">The operation couldn\'t be completed, server is unavailable</string>
-  <string name="empty"></string>
+  <string name="network_error_socket_timeout_exception">The server took too long to respond</string>
   <string name="forbidden_permissions">You do not have permission %s</string>
   <string name="forbidden_permissions_rename">to rename this file</string>
   <string name="forbidden_permissions_delete">to delete this file</string>
@@ -325,6 +316,7 @@
   <string name="downloader_download_file_not_found">The file is no longer available on the server</string>
   <string name="prefs_category_accounts">Accounts</string>
   <string name="prefs_add_account">Add account</string>
+  <string name="drawer_manage_accounts">Manage accounts</string>
   <string name="auth_redirect_non_secure_connection_title">Secure connection is redirected through an unsecured route.</string>
   <string name="actionbar_logger">Logs</string>
   <string name="log_send_history_button">Send history</string>
@@ -346,9 +338,7 @@
   <string name="copy_file_invalid_overwrite">The file exists already in the destination folder</string>
   <string name="copy_file_error">An error occurred while trying to copy this file or folder</string>
   <string name="forbidden_permissions_copy">to copy this file</string>
-  <string name="prefs_category_instant_uploading">Instant uploads</string>
   <string name="prefs_category_details">Details</string>
-  <string name="prefs_instant_video_upload_path_title">Upload video path</string>
   <string name="sync_folder_failed_content">Synchronisation of %1$s folder could not be completed</string>
   <string name="shared_subject_header">shared</string>
   <string name="with_you_subject_header">with you</string>
@@ -366,20 +356,23 @@
   <string name="file_list__footer__files">%1$d files</string>
   <string name="file_list__footer__files_and_folder">%1$d files, 1 folder</string>
   <string name="file_list__footer__files_and_folders">%1$d files, %2$d folders</string>
-  <string name="prefs_instant_behaviour_dialogTitle">Original file will be...</string>
-  <string name="prefs_instant_behaviour_title">Original file will be...</string>
+  <string name="prefs_camera_upload_source_path_title">Camera folder (%1$s)</string>
+  <string name="prefs_camera_upload_source_path_title_required">required</string>
+  <string name="prefs_camera_upload_source_path_title_optional">optional</string>
+  <string name="prefs_camera_upload_behaviour_dialogTitle">Original file will be...</string>
+  <string name="prefs_camera_upload_behaviour_title">Original file will be...</string>
   <string name="upload_copy_files">Copy file</string>
   <string name="upload_move_files">Move file</string>
   <string name="pref_behaviour_entries_keep_file">kept in original folder</string>
   <string name="pref_behaviour_entries_move">moved to app folder</string>
-  <string name="share_dialog_title">Sharing</string>
+  <string name="share_dialog_title">Share</string>
   <string name="share_file">Share %1$s</string>
-  <string name="share_with_user_section_title">Share with users and groups</string>
   <string name="share_no_users">No data shared with users yet</string>
   <string name="share_add_user_or_group">Add user or group</string>
-  <string name="share_via_link_section_title">Share link</string>
-  <string name="share_via_link_expiration_date_label">Set expiration date</string>
-  <string name="share_via_link_password_label">Password protect</string>
+  <string name="share_cancel_public_link_button">Cancel</string>
+  <string name="share_confirm_public_link_button">Save</string>
+  <string name="share_via_link_expiration_date_label">Expiration</string>
+  <string name="share_via_link_password_label">Password</string>
   <string name="share_via_link_password_title">Secured</string>
   <string name="share_via_link_edit_permission_label">Allow editing</string>
   <string name="share_get_public_link_button">Get link</string>
@@ -411,4 +404,10 @@
   <string name="manage_space_error">Some files could not be deleted.</string>
   <string name="permission_storage_access">Additional permissions required to upload &amp; download files.</string>
   <string name="local_file_not_found_toast">The file was not found in the local file system</string>
+  <string name="confirmation_remove_files_alert">Do you really want to remove the selected items?</string>
+  <string name="confirmation_remove_folders_alert">Do you really want to remove the selected items and their contents?</string>
+  <plurals name="items_selected_count">
+    <item quantity="one">%d selected</item>
+    <item quantity="other">%d selected</item>
+  </plurals>
 </resources>

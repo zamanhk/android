@@ -2,7 +2,7 @@
  *   ownCloud Android client application
  *
  *   @author masensio
- *   Copyright (C) 2016 ownCloud Inc.
+ *   Copyright (C) 2016 ownCloud GmbH.
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License version 2,
@@ -34,7 +34,13 @@ public enum UploadResult {
     CANCELLED(7),
     FILE_NOT_FOUND(8),
     DELAYED_FOR_WIFI(9),
-    SERVICE_INTERRUPTED(10);
+    SERVICE_INTERRUPTED(10),
+    SERVICE_UNAVAILABLE(11),
+    QUOTA_EXCEEDED(12),
+    SSL_RECOVERABLE_PEER_UNVERIFIED(13),
+    SPECIFIC_FORBIDDEN(14),
+    SPECIFIC_SERVICE_UNAVAILABLE(15),
+    SPECIFIC_UNSUPPORTED_MEDIA_TYPE(16);
 
     private final int value;
 
@@ -71,6 +77,18 @@ public enum UploadResult {
                 return DELAYED_FOR_WIFI;
             case 10:
                 return SERVICE_INTERRUPTED;
+            case 11:
+                return SERVICE_UNAVAILABLE;
+            case 12:
+                return QUOTA_EXCEEDED;
+            case 13:
+                return SSL_RECOVERABLE_PEER_UNVERIFIED;
+            case 14:
+                return SPECIFIC_FORBIDDEN;
+            case 15:
+                return SPECIFIC_SERVICE_UNAVAILABLE;
+            case 16:
+                return SPECIFIC_UNSUPPORTED_MEDIA_TYPE;
         }
         return null;
     }
@@ -86,7 +104,6 @@ public enum UploadResult {
             case WRONG_CONNECTION:
             case INCORRECT_ADDRESS:
             case SSL_ERROR:
-            case SSL_RECOVERABLE_PEER_UNVERIFIED:
                 return NETWORK_CONNECTION;
             case ACCOUNT_EXCEPTION:
             case UNAUTHORIZED:
@@ -105,6 +122,18 @@ public enum UploadResult {
                 return CANCELLED;
             case DELAYED_FOR_WIFI:
                 return DELAYED_FOR_WIFI;
+            case SERVICE_UNAVAILABLE:
+                return SERVICE_UNAVAILABLE;
+            case QUOTA_EXCEEDED:
+                return QUOTA_EXCEEDED;
+            case SSL_RECOVERABLE_PEER_UNVERIFIED:
+                return SSL_RECOVERABLE_PEER_UNVERIFIED;
+            case SPECIFIC_FORBIDDEN:
+                return SPECIFIC_FORBIDDEN;
+            case SPECIFIC_SERVICE_UNAVAILABLE:
+                return SPECIFIC_SERVICE_UNAVAILABLE;
+            case SPECIFIC_UNSUPPORTED_MEDIA_TYPE:
+                return SPECIFIC_UNSUPPORTED_MEDIA_TYPE;
             case UNKNOWN_ERROR:
                 if (result.getException() instanceof java.io.FileNotFoundException) {
                     return FILE_ERROR;

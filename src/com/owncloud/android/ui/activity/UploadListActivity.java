@@ -4,7 +4,7 @@
  *   @author LukeOwncloud
  *   @author David A. Velasco
  *   @author masensio
- *   Copyright (C) 2016 ownCloud Inc.
+ *   Copyright (C) 2016 ownCloud GmbH.
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License version 2,
@@ -34,11 +34,10 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.support.v4.app.FragmentTransaction;
-import android.support.v4.view.GravityCompat;
+import android.support.v4.content.LocalBroadcastManager;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
-import android.widget.Toast;
 
 import com.owncloud.android.R;
 import com.owncloud.android.authentication.AccountUtils;
@@ -48,6 +47,7 @@ import com.owncloud.android.db.OCUpload;
 import com.owncloud.android.db.UploadResult;
 import com.owncloud.android.files.services.FileUploader;
 import com.owncloud.android.files.services.FileUploader.FileUploaderBinder;
+import com.owncloud.android.files.services.TransferRequester;
 import com.owncloud.android.lib.common.operations.RemoteOperation;
 import com.owncloud.android.lib.common.operations.RemoteOperationResult;
 import com.owncloud.android.lib.common.utils.Log_OC;
@@ -71,6 +71,8 @@ public class UploadListActivity extends FileActivity implements UploadListFragme
 
     private UploadMessagesReceiver mUploadMessagesReceiver;
 
+    private LocalBroadcastManager mLocalBroadcastManager;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -82,20 +84,20 @@ public class UploadListActivity extends FileActivity implements UploadListFragme
         // but that's other story
         setFile(null);
 
-        // Navigation Drawer
-        initDrawer();
+        // setup toolbar
+        setupToolbar();
+
+        // setup drawer
+        setupDrawer(R.id.nav_uploads);
 
         // Add fragment with a transaction for setting a tag
         if(savedInstanceState == null) {
             createUploadListFragment();
         } // else, the Fragment Manager makes the job on configuration changes
 
-        // enable ActionBar app icon to behave as action to toggle nav drawer
-        getSupportActionBar().setHomeButtonEnabled(true);
-        mDrawerToggle.setDrawerIndicatorEnabled(true);
-        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
-        getSupportActionBar().setTitle(R.string.uploads_view_title);
+        getSupportActionBar().setTitle(getString(R.string.uploads_view_title));
 
+        mLocalBroadcastManager = LocalBroadcastManager.getInstance(this);
     }
 
     private void createUploadListFragment(){
@@ -117,7 +119,7 @@ public class UploadListActivity extends FileActivity implements UploadListFragme
         uploadIntentFilter.addAction(FileUploader.getUploadsAddedMessage());
         uploadIntentFilter.addAction(FileUploader.getUploadStartMessage());
         uploadIntentFilter.addAction(FileUploader.getUploadFinishMessage());
-        registerReceiver(mUploadMessagesReceiver, uploadIntentFilter);
+        mLocalBroadcastManager.registerReceiver(mUploadMessagesReceiver, uploadIntentFilter);
 
         Log_OC.v(TAG, "onResume() end");
 
@@ -127,7 +129,7 @@ public class UploadListActivity extends FileActivity implements UploadListFragme
     protected void onPause() {
         Log_OC.v(TAG, "onPause() start");
         if (mUploadMessagesReceiver != null) {
-            unregisterReceiver(mUploadMessagesReceiver);
+            mLocalBroadcastManager.unregisterReceiver(mUploadMessagesReceiver);
             mUploadMessagesReceiver = null;
         }
         super.onPause();
@@ -142,8 +144,10 @@ public class UploadListActivity extends FileActivity implements UploadListFragme
         /// TODO is this path still active?
         File f = new File(file.getLocalPath());
         if(!f.exists()) {
-            Toast.makeText(this, "Cannot open. Local file does not exist.",
-                    Toast.LENGTH_SHORT).show();
+            showSnackMessage(
+                getString(R.string.local_file_not_found_toast)
+            );
+
         } else {
             openFileWithDefault(file.getLocalPath());
         }
@@ -164,7 +168,9 @@ public class UploadListActivity extends FileActivity implements UploadListFragme
         try {
             startActivity(myIntent);
         } catch (ActivityNotFoundException e) {
-            Toast.makeText(this, "Found no app to open this file.", Toast.LENGTH_LONG).show();
+            showSnackMessage(
+                getString(R.string.file_list_no_app_for_file_type)
+            );
             Log_OC.i(TAG, "Could not find app for sending log history.");
 
         }        
@@ -186,14 +192,13 @@ public class UploadListActivity extends FileActivity implements UploadListFragme
                 (UploadListFragment) getSupportFragmentManager().findFragmentByTag(TAG_UPLOAD_LIST_FRAGMENT);
         switch (item.getItemId()) {
             case android.R.id.home:
-                if (mDrawerLayout.isDrawerOpen(GravityCompat.START)) {
-                    mDrawerLayout.closeDrawer(GravityCompat.START);
+                if (isDrawerOpen()) {
+                    closeDrawer();
                 } else {
-                    mDrawerLayout.openDrawer(GravityCompat.START);
+                    openDrawer();
                 }
-                break;
             case R.id.action_retry_uploads:
-                FileUploader.UploadRequester requester = new FileUploader.UploadRequester();
+                TransferRequester requester = new TransferRequester();
                 requester.retryFailedUploads(this, null, null);
                 break;
 
@@ -238,7 +243,7 @@ public class UploadListActivity extends FileActivity implements UploadListFragme
                 this,
                 data.getStringExtra(AccountManager.KEY_ACCOUNT_NAME)
             );
-            FileUploader.UploadRequester requester = new FileUploader.UploadRequester();
+            TransferRequester requester = new TransferRequester();
             requester.retryFailedUploads(
                 this,
                 account,
@@ -260,11 +265,12 @@ public class UploadListActivity extends FileActivity implements UploadListFragme
             dismissLoadingDialog();
             Account account = (Account) result.getData().get(0);
             if (!result.isSuccess()) {
-                requestCredentialsUpdate(this, account);
+
+                requestCredentialsUpdate();
 
             } else {
                 // already updated -> just retry!
-                FileUploader.UploadRequester requester = new FileUploader.UploadRequester();
+                TransferRequester requester = new TransferRequester();
                 requester.retryFailedUploads(this, account, UploadResult.CREDENTIAL_ERROR);
             }
 
@@ -326,21 +332,13 @@ public class UploadListActivity extends FileActivity implements UploadListFragme
          */
         @Override
         public void onReceive(Context context, Intent intent) {
-            try {
-                UploadListFragment uploadListFragment =
-                    (UploadListFragment) getSupportFragmentManager().findFragmentByTag(TAG_UPLOAD_LIST_FRAGMENT);
+            UploadListFragment uploadListFragment =
+                (UploadListFragment) getSupportFragmentManager().findFragmentByTag(TAG_UPLOAD_LIST_FRAGMENT);
 
-                uploadListFragment.updateUploads();
-            } finally {
-                if (intent != null) {
-                    removeStickyBroadcast(intent);
-                }
-            }
-
+            uploadListFragment.updateUploads();
         }
     }
 
-    @Override
     protected String getDefaultTitle() {
         return getString(R.string.uploads_view_title);
     }
@@ -352,9 +350,9 @@ public class UploadListActivity extends FileActivity implements UploadListFragme
     @Override
     protected void onAccountSet(boolean stateWasRecovered) {
         super.onAccountSet(stateWasRecovered);
-        updateActionBarTitleAndHomeButton(null);
+        getSupportActionBar().setTitle(getString(R.string.uploads_view_title));
         if (mAccountWasSet) {
-            setUsernameInDrawer(findViewById(R.id.left_drawer), getAccount());
+            setAccountInDrawer(getAccount());
         }
     }
 

@@ -1,23 +1,26 @@
 /**
- * ownCloud Android client application
+ *   ownCloud Android client application
  *
- * @author David A. Velasco
- * Copyright (C) 2011  Bartek Przybylski
- * Copyright (C) 2015 ownCloud Inc.
- * <p/>
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 2,
- * as published by the Free Software Foundation.
- * <p/>
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- * <p/>
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *   @author David A. Velasco
+ *   Copyright (C) 2011  Bartek Przybylski
+ *   Copyright (C) 2016 ownCloud GmbH.
+ *
+ *   This program is free software: you can redistribute it and/or modify
+ *   it under the terms of the GNU General Public License version 2,
+ *   as published by the Free Software Foundation.
+ *
+ *   This program is distributed in the hope that it will be useful,
+ *   but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *   GNU General Public License for more details.
+ *
+ *   You should have received a copy of the GNU General Public License
+ *   along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
  */
 package com.owncloud.android.ui.adapter;
+
+import com.owncloud.android.datamodel.ThumbnailsCacheManager;
 
 import android.content.Context;
 import android.support.v7.widget.RecyclerView;
@@ -29,15 +32,13 @@ import com.owncloud.android.R;
 import com.owncloud.android.lib.common.utils.Log_OC;
 import com.owncloud.android.utils.BitmapUtils;
 import com.owncloud.android.utils.DisplayUtils;
+import com.owncloud.android.utils.MimetypeIconUtil;
 
 import java.io.File;
+import java.io.FileFilter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
-
-/**
- * Changes made by Denis Dijak on 25.4.2016
- */
 
 /**
  * This Adapter populates a ListView with all files and directories contained
@@ -50,12 +51,15 @@ public class LocalFileListAdapter extends RecyclerView.Adapter<LocalRecyclerView
 
     private Context mContext;
     private File mDirectory;
+    private File mFolder;
     private ArrayList<String> checkedFiles;
     private File[] mFiles = null;
+    private boolean mJustFolders;
 
-    public LocalFileListAdapter(File directory, Context context) {
-        setHasStableIds(true);
+    public LocalFileListAdapter(File directory, boolean justFolders, Context context) {
         mContext = context;
+        setHasStableIds(true);
+        mJustFolders = justFolders;
         swapDirectory(directory);
         checkedFiles = new ArrayList<>();
     }
@@ -162,8 +166,17 @@ public class LocalFileListAdapter extends RecyclerView.Adapter<LocalRecyclerView
      * @param directory     New file to adapt. Can be NULL, meaning "no content to adapt".
      */
     public void swapDirectory(File directory) {
-        mDirectory = directory;
-        mFiles = (mDirectory != null ? mDirectory.listFiles() : null);
+        if (directory == null) {
+            Log_OC.e(TAG, "Null received as directory to swap; ignoring");
+            return;
+        }
+        mFolder = directory;
+        mFiles = mFolder.listFiles(new FileFilter() {
+            @Override
+            public boolean accept(File file) {
+                return (file.exists() && (!mJustFolders || file.isDirectory()));
+            }
+        });
         if (mFiles != null) {
             Arrays.sort(mFiles, new Comparator<File>() {
                 @Override

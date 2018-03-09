@@ -12,12 +12,6 @@
   <string name="actionbar_send_file">Göndər</string>
   <string name="actionbar_sort">Çeşidləmək</string>
   <string name="actionbar_sort_title">Təyinata görə çeşidləmək </string>
-  <string-array name="actionbar_sortby">
-    <item>A-Z</item>
-    <item>Yenisi - Köhnəsi</item>
-  </string-array>
-  <!--TODO re-enable when server-side folder size calculation is available   
-    	<item>Biggest - Smallest</item>-->
   <!--TODO re-enable when "Accounts" is available in Navigation Drawer-->
   <!--<string name="drawer_item_accounts">Accounts</string>-->
   <!--TODO re-enable when "On Device" is available
@@ -25,11 +19,8 @@
   <string name="drawer_open">Aç</string>
   <string name="prefs_category_general">Ümumi</string>
   <string name="prefs_category_more">Daha da</string>
+  <string name="prefs_category_security">Təhlükəsizlik</string>
   <string name="prefs_accounts">Hesablar</string>
-  <string name="prefs_instant_upload">Ani şəkil yükləmələri</string>
-  <string name="prefs_instant_upload_summary">Kamera vasitəsi ilə götürülmüş şəkillərin tez yüklənməsi</string>
-  <string name="prefs_instant_video_upload">Ani video yükləmələri</string>
-  <string name="prefs_instant_video_upload_summary">Kamera vasitəsi ilə yazılmış videoların tez yüklənməsi</string>
   <string name="prefs_log_summary">Bu problemlərin jurnal edilməsi üçün istifadə edilir</string>
   <string name="prefs_log_summary_history">Bu, yazılmış jurnalları göstərir</string>
   <string name="prefs_help">Kömək</string>
@@ -47,7 +38,6 @@
   <string name="sync_string_files">Fayllar</string>
   <string name="setup_btn_connect">Qoşul</string>
   <string name="uploader_btn_upload_text">Serverə yüklə</string>
-  <string name="uploader_top_message">Yüklənmə qovluöunu seçin:</string>
   <string name="uploader_wrn_no_account_title">Hesab tapılmadı</string>
   <string name="uploader_wrn_no_account_setup_btn_text">Qurulum</string>
   <string name="uploader_wrn_no_account_quit_btn_text">Çıx</string>
@@ -73,6 +63,7 @@
   <string name="common_error">Səhv</string>
   <string name="common_loading">Yüklənir...</string>
   <string name="common_error_unknown">Bəlli olmayan səhv baş verdi</string>
+  <string name="common_pending">Gözləmə</string>
   <string name="about_title">Haqqında</string>
   <string name="change_password">Şifrəni dəyiş</string>
   <string name="create_account">Hesab yarat</string>
@@ -138,11 +129,8 @@ Aşağıda göstərilən %5$s-də olan daxili və xarici fayl(lar) link edilmiş
   <string name="auth_account_not_new">Avadanlıqda eyni istifadəçi və server üçün artıq hesab mövcuddur</string>
   <string name="auth_account_not_the_same">Daxil edilən hesab bu hesabla üst-üstə düşmür</string>
   <string name="auth_unknown_error_title">Yalnış səhv baş verdi!</string>
-  <string name="auth_unknown_host_title">Host-u tapmaq mümkün olmadı</string>
   <string name="auth_incorrect_path_title">Server nüsxəsi tapılmadı</string>
-  <string name="auth_timeout_title">Server cavab üçün çox uzun müddət aldı</string>
   <string name="auth_ssl_general_error_title">SSL inisializasiyası səhvi</string>
-  <string name="auth_ssl_unverified_server_title">SSL serverin şəxsiliyini təyin etmək mümkün olmadı</string>
   <string name="auth_bad_oc_version_title">Təyin edilməyən server versiyası</string>
   <string name="auth_wrong_connection_title">Qoşulma yaratmaq mümkün olmadı</string>
   <string name="auth_secure_connection">Təhlükəsiz qoşulma yaradıldı</string>
@@ -157,9 +145,10 @@ Aşağıda göstərilən %5$s-də olan daxili və xarici fayl(lar) link edilmiş
   <string name="auth_account_does_not_exist">Hesab göstərilən avadanlıqda mövcud deyil</string>
   <string name="common_rename">Adı dəyiş</string>
   <string name="common_remove">Sil</string>
-  <string name="confirmation_remove_alert">Siz həqiqətən %1$s silmək istəyirsiniz?</string>
+  <string name="confirmation_remove_file_alert">Siz həqiqətən %1$s silmək istəyirsiniz?</string>
   <string name="confirmation_remove_folder_alert">Siz həqiqətəndə %1$s və onun kontentini silmək istəyirsiniz?</string>
   <string name="confirmation_remove_local">Yalnız daxili</string>
+  <string name="confirmation_remove_public_share_message">Siz həqiqətən %1$s silmək istəyirsiniz?</string>
   <string name="remove_success_msg">Silmə uğurlu oldu</string>
   <string name="remove_fail_msg">Silmək mümkün olmadı</string>
   <string name="rename_dialog_title">Yeni adı daxil edin</string>
@@ -175,8 +164,6 @@ Aşağıda göstərilən %5$s-də olan daxili və xarici fayl(lar) link edilmiş
   <string name="filedisplay_no_file_selected">Heç bir fayl seçilməyib</string>
   <string name="activity_chooser_title">Linki yollayın ...</string>
   <string name="oauth_check_onoff">oAuth2 ilə qeydiyyatdan keçin</string>
-  <string name="oauth_login_connection">oAuth2 serverinə qoşulur...</string>
-  <string name="ssl_validator_header">Sayta olan identifikasiya yoxlanıla bilməz</string>
   <string name="ssl_validator_reason_cert_not_trusted">Server sertifikati inamlı deyil</string>
   <string name="ssl_validator_reason_cert_expired">- Server sertifikatının vaxtı bitmişdir</string>
   <string name="ssl_validator_reason_cert_not_yet_valid">- Server sertifikatının düzgün tarixi gələcəkdədir</string>
@@ -206,7 +193,6 @@ Aşağıda göstərilən %5$s-də olan daxili və xarici fayl(lar) link edilmiş
   <string name="placeholder_filesize">389 KB</string>
   <string name="placeholder_timestamp">2012/05/18 12:23</string>
   <string name="placeholder_media_time">12:23:45</string>
-  <string name="instant_upload_path">/CəldYükləmə</string>
   <string name="conflict_keep_both">Birlikdə saxla</string>
   <string name="preview_image_description">Şəkili göstər</string>
   <string name="preview_image_error_unknown_format">Bu şəkil göstərilə bilməz</string>
@@ -224,10 +210,7 @@ inzibatçınızla əlaqə saxlayasınız.</string>
   <string name="clipboard_text_copied">Mübadilə buferinə nüsxələndi</string>
   <string name="error_cant_bind_to_operations_service">Kritik səhv: əməliyyat yerinə yetirilə bilinmir</string>
   <string name="network_error_socket_exception">Serverlə əlaqəyə girdikdə səhv baş verdi.</string>
-  <string name="network_error_socket_timeout_exception">Serveri gözlədiyimiz müddətdə səhv baş verdi, əməliyyat bitə bilməz</string>
-  <string name="network_error_connect_timeout_exception">Serveri gözlədiyimiz müddətdə səhv baş verdi, əməliyyat bitə bilməz</string>
-  <string name="network_host_not_available">Əməliyyat bitə bilməz, serverə çatmaq mümkün deyil </string>
-  <string name="empty"></string>
+  <string name="network_error_socket_timeout_exception">Server cavab üçün çox uzun müddət aldı</string>
   <string name="forbidden_permissions">Sizin yetkiniz yoxdur %s</string>
   <string name="forbidden_permissions_rename">faylın adını dəyişmək</string>
   <string name="forbidden_permissions_delete">bu faylı silmək üçün</string>
@@ -255,8 +238,11 @@ inzibatçınızla əlaqə saxlayasınız.</string>
   <string name="subject_user_shared_with_you">%1$s paylaşdı \"%2$s\" sizinlə</string>
   <string name="auth_refresh_button">Qoşulmanı yenilə</string>
   <string name="auth_host_address">Server ünvanı</string>
-  <string name="share_dialog_title">Paylaşılır</string>
-  <string name="share_via_link_section_title">Linki yayımla</string>
+  <string name="share_dialog_title">Paylaş</string>
+  <string name="share_cancel_public_link_button">Dayandır</string>
+  <string name="share_confirm_public_link_button">Saxla</string>
+  <string name="share_via_link_expiration_date_label">Vaxtın bitməsi</string>
+  <string name="share_via_link_password_label">Şifrə</string>
   <string name="share_search">Axtarış</string>
   <string name="share_privilege_can_share">yayımlaya bilərsiniz</string>
   <string name="share_privilege_can_edit">dəyişmək olar</string>

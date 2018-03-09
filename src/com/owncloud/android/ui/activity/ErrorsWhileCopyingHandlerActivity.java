@@ -2,7 +2,7 @@
  *   ownCloud Android client application
  *
  *   @author David A. Velasco
- *   Copyright (C) 2015 ownCloud Inc.
+ *   Copyright (C) 2016 ownCloud GmbH.
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License version 2,
@@ -29,6 +29,7 @@ import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
+import android.support.design.widget.Snackbar;
 import android.support.v4.app.DialogFragment;
 import android.support.v7.app.AppCompatActivity;
 import android.text.method.ScrollingMovementMethod;
@@ -47,7 +48,7 @@ import com.owncloud.android.datamodel.FileDataStorageManager;
 import com.owncloud.android.datamodel.OCFile;
 import com.owncloud.android.lib.common.utils.Log_OC;
 
-import com.owncloud.android.ui.dialog.IndeterminateProgressDialog;
+import com.owncloud.android.ui.dialog.LoadingDialog;
 import com.owncloud.android.utils.FileStorageUtils;
 
 
@@ -216,7 +217,7 @@ public class ErrorsWhileCopyingHandlerActivity  extends AppCompatActivity
         @Override
         protected void onPreExecute () {
             /// progress dialog and disable 'Move' button
-            mCurrentDialog = IndeterminateProgressDialog.newInstance(R.string.wait_a_moment, false);
+            mCurrentDialog = LoadingDialog.newInstance(R.string.wait_a_moment, false);
             mCurrentDialog.show(getSupportFragmentManager(), WAIT_DIALOG_TAG);
             findViewById(R.id.ok).setEnabled(false);
         }
@@ -275,9 +276,13 @@ public class ErrorsWhileCopyingHandlerActivity  extends AppCompatActivity
                 finish();
                 
             } else {
-                Toast t = Toast.makeText(ErrorsWhileCopyingHandlerActivity.this,
-                        getString(R.string.foreign_files_fail), Toast.LENGTH_LONG);
-                t.show();
+                Snackbar snackbar = Snackbar.make(
+                    findViewById(android.R.id.content),
+                    R.string.foreign_files_fail,
+                    Snackbar.LENGTH_LONG
+                );
+                snackbar.show();
+
             }
         }
     }    

@@ -1,7 +1,9 @@
 /**
  *   ownCloud Android client application
  *
- *   Copyright (C) 2015 ownCloud Inc.
+ *   @author David A. Velasco
+ *   @author David González Verdugo
+ *   Copyright (C) 2017 ownCloud GmbH.
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License version 2,
@@ -33,25 +35,30 @@ import android.os.IBinder;
 import android.os.Looper;
 import android.os.Message;
 import android.os.Process;
+import android.support.v4.content.LocalBroadcastManager;
 import android.util.Pair;
 
 import com.owncloud.android.MainApp;
-import com.owncloud.android.R;
 import com.owncloud.android.datamodel.FileDataStorageManager;
 import com.owncloud.android.datamodel.OCFile;
 import com.owncloud.android.lib.common.OwnCloudAccount;
 import com.owncloud.android.lib.common.OwnCloudClient;
 import com.owncloud.android.lib.common.OwnCloudClientManagerFactory;
-import com.owncloud.android.lib.common.OwnCloudCredentials;
-import com.owncloud.android.lib.common.OwnCloudCredentialsFactory;
+import com.owncloud.android.lib.common.authentication.OwnCloudCredentials;
+import com.owncloud.android.lib.common.authentication.OwnCloudCredentialsFactory;
 import com.owncloud.android.lib.common.accounts.AccountUtils.AccountNotFoundException;
+import com.owncloud.android.lib.common.authentication.oauth.OAuth2GrantType;
+import com.owncloud.android.lib.common.authentication.oauth.OAuth2RequestBuilder;
+import com.owncloud.android.lib.common.authentication.oauth.OAuth2Provider;
+import com.owncloud.android.lib.common.authentication.oauth.OAuth2ProvidersRegistry;
 import com.owncloud.android.lib.common.operations.OnRemoteOperationListener;
 import com.owncloud.android.lib.common.operations.RemoteOperation;
 import com.owncloud.android.lib.common.operations.RemoteOperationResult;
 import com.owncloud.android.lib.common.utils.Log_OC;
+import com.owncloud.android.lib.resources.shares.OCShare;
 import com.owncloud.android.lib.resources.shares.ShareType;
 import com.owncloud.android.lib.resources.status.OwnCloudVersion;
-import com.owncloud.android.lib.resources.users.GetRemoteUserNameOperation;
+import com.owncloud.android.lib.resources.users.GetRemoteUserInfoOperation;
 import com.owncloud.android.operations.CheckCurrentCredentialsOperation;
 import com.owncloud.android.operations.CopyFileOperation;
 import com.owncloud.android.operations.CreateFolderOperation;
@@ -59,12 +66,11 @@ import com.owncloud.android.operations.CreateShareViaLinkOperation;
 import com.owncloud.android.operations.CreateShareWithShareeOperation;
 import com.owncloud.android.operations.GetServerInfoOperation;
 import com.owncloud.android.operations.MoveFileOperation;
-import com.owncloud.android.operations.OAuth2GetAccessToken;
 import com.owncloud.android.operations.RemoveFileOperation;
+import com.owncloud.android.operations.RemoveShareOperation;
 import com.owncloud.android.operations.RenameFileOperation;
 import com.owncloud.android.operations.SynchronizeFileOperation;
 import com.owncloud.android.operations.SynchronizeFolderOperation;
-import com.owncloud.android.operations.UnshareOperation;
 import com.owncloud.android.operations.UpdateSharePermissionsOperation;
 import com.owncloud.android.operations.UpdateShareViaLinkOperation;
 import com.owncloud.android.operations.common.SyncOperation;
@@ -81,12 +87,12 @@ public class OperationsService extends Service {
 
     public static final String EXTRA_ACCOUNT = "ACCOUNT";
     public static final String EXTRA_SERVER_URL = "SERVER_URL";
-    public static final String EXTRA_OAUTH2_QUERY_PARAMETERS = "OAUTH2_QUERY_PARAMETERS";
+    public static final String EXTRA_OAUTH2_AUTHORIZATION_CODE = "OAUTH2_AUTHORIZATION_CODE";
+    public static final String EXTRA_OAUTH2_QUERY_PARAMETERS = "OAUTH2_AUTHORIZATION_QUERY_PARAMETERS";
     public static final String EXTRA_REMOTE_PATH = "REMOTE_PATH";
     public static final String EXTRA_NEWNAME = "NEWNAME";
     public static final String EXTRA_REMOVE_ONLY_LOCAL = "REMOVE_LOCAL_COPY";
     public static final String EXTRA_CREATE_FULL_PATH = "CREATE_FULL_PATH";
-    public static final String EXTRA_SYNC_FILE_CONTENTS = "SYNC_FILE_CONTENTS";
     public static final String EXTRA_RESULT = "RESULT";
     public static final String EXTRA_NEW_PARENT_PATH = "NEW_PARENT_PATH";
     public static final String EXTRA_FILE = "FILE";
@@ -96,17 +102,22 @@ public class OperationsService extends Service {
     public static final String EXTRA_SHARE_EXPIRATION_DATE_IN_MILLIS = "SHARE_EXPIRATION_YEAR";
     public static final String EXTRA_SHARE_PERMISSIONS = "SHARE_PERMISSIONS";
     public static final String EXTRA_SHARE_PUBLIC_UPLOAD = "SHARE_PUBLIC_UPLOAD";
+    public static final String EXTRA_SHARE_NAME = "SHARE_NAME";
     public static final String EXTRA_SHARE_ID = "SHARE_ID";
+    public static final String EXTRA_PUSH_ONLY = "PUSH_ONLY";
+    public static final String EXTRA_SYNC_REGULAR_FILES = "SYNC_REGULAR_FILES";
 
     public static final String EXTRA_COOKIE = "COOKIE";
 
     public static final String ACTION_CREATE_SHARE_VIA_LINK = "CREATE_SHARE_VIA_LINK";
+    public static final String ACTION_UPDATE_SHARE_VIA_LINK = "UPDATE_SHARE_VIA_LINK";
     public static final String ACTION_CREATE_SHARE_WITH_SHAREE = "CREATE_SHARE_WITH_SHAREE";
+    public static final String ACTION_UPDATE_SHARE_WITH_SHAREE = "UPDATE_SHARE_WITH_SHAREE";
     public static final String ACTION_UNSHARE = "UNSHARE";
-    public static final String ACTION_UPDATE_SHARE = "UPDATE_SHARE";
     public static final String ACTION_GET_SERVER_INFO = "GET_SERVER_INFO";
     public static final String ACTION_OAUTH2_GET_ACCESS_TOKEN = "OAUTH2_GET_ACCESS_TOKEN";
     public static final String ACTION_GET_USER_NAME = "GET_USER_NAME";
+    public static final String ACTION_GET_USER_AVATAR = "GET_USER_AVATAR";
     public static final String ACTION_RENAME = "RENAME";
     public static final String ACTION_REMOVE = "REMOVE";
     public static final String ACTION_CREATE_FOLDER = "CREATE_FOLDER";
@@ -121,10 +132,9 @@ public class OperationsService extends Service {
     public static final String ACTION_OPERATION_FINISHED = OperationsService.class.getName() +
             ".OPERATION_FINISHED";
 
-
     private ConcurrentMap<Integer, Pair<RemoteOperation, RemoteOperationResult>>
             mUndispatchedFinishedOperations =
-            new ConcurrentHashMap<Integer, Pair<RemoteOperation, RemoteOperationResult>>();
+            new ConcurrentHashMap<>();
 
     private static class Target {
         public Uri mServerUrl = null;
@@ -142,6 +152,8 @@ public class OperationsService extends Service {
     private OperationsServiceBinder mOperationsBinder;
     
     private SyncFolderHandler mSyncFolderHandler;
+
+    private LocalBroadcastManager mLocalBroadcastManager;
     
     /**
      * Service initialization
@@ -162,12 +174,15 @@ public class OperationsService extends Service {
         thread = new HandlerThread("Syncfolder thread", Process.THREAD_PRIORITY_BACKGROUND);
         thread.start();
         mSyncFolderHandler = new SyncFolderHandler(thread.getLooper(), this);
+
+        // create manager for local broadcasts
+        mLocalBroadcastManager = LocalBroadcastManager.getInstance(this);
     }
 
 
     /**
      * Entry point to add a new operation to the queue of operations.
-     * <p/>
+     *
      * New operations are added calling to startService(), resulting in a call to this method.
      * This ensures the service will keep on working although the caller activity goes away.
      */
@@ -186,7 +201,7 @@ public class OperationsService extends Service {
             Account account = intent.getParcelableExtra(EXTRA_ACCOUNT);
             String remotePath = intent.getStringExtra(EXTRA_REMOTE_PATH);
 
-            Pair<Account, String> itemSyncKey =  new Pair<Account , String>(account, remotePath);
+            Pair<Account, String> itemSyncKey =  new Pair<>(account, remotePath);
 
             Pair<Target, RemoteOperation> itemToQueue = newOperation(intent);
             if (itemToQueue != null) {
@@ -216,13 +231,9 @@ public class OperationsService extends Service {
                     saveAllClients(this, MainApp.getAccountType());
 
             // TODO - get rid of these exceptions
-        } catch (AccountNotFoundException e) {
-            e.printStackTrace();
-        } catch (AuthenticatorException e) {
-            e.printStackTrace();
-        } catch (OperationCanceledException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
+        } catch (
+            AccountNotFoundException | AuthenticatorException |
+                OperationCanceledException | IOException e) {
             e.printStackTrace();
         }
 
@@ -271,7 +282,7 @@ public class OperationsService extends Service {
          * {@link OperationsServiceBinder} instance
          */
         private final ConcurrentMap<OnRemoteOperationListener, Handler> mBoundListeners =
-                new ConcurrentHashMap<OnRemoteOperationListener, Handler>();
+                new ConcurrentHashMap<>();
 
         private ServiceHandler mServiceHandler = null;
 
@@ -350,7 +361,6 @@ public class OperationsService extends Service {
                 mServiceHandler.mPendingOperations.add(itemToQueue);
                 startService(new Intent(OperationsService.this, OperationsService.class));
                 return itemToQueue.second.hashCode();
-                
             } else {
                 return Long.MAX_VALUE;
             }
@@ -364,7 +374,7 @@ public class OperationsService extends Service {
             if (undispatched != null) {
                 listener.onRemoteOperationFinish(undispatched.first, undispatched.second);
                 return true;
-                //Log_OC.wtf(TAG, "Sending callback later");
+                //Log_OC.e(TAG, "Sending callback later");
             } else {
                 return (!mServiceHandler.mPendingOperations.isEmpty());
             }
@@ -379,11 +389,11 @@ public class OperationsService extends Service {
          * or waiting to download.
          * 
          * @param account       ownCloud account where the remote file is stored.
-         * @param remotePath    Path of the folder to check if something is synchronizing
+         * @param file          File to check if something is synchronizing
          *                      / downloading / uploading inside.
          */
-        public boolean isSynchronizing(Account account, String remotePath) {
-            return mSyncFolderHandler.isSynchronizing(account, remotePath);
+        public boolean isSynchronizing(Account account, OCFile file) {
+            return mSyncFolderHandler.isSynchronizing(account, file.getRemotePath());
         }
 
     }
@@ -403,14 +413,14 @@ public class OperationsService extends Service {
 
 
         private ConcurrentLinkedQueue<Pair<Target, RemoteOperation>> mPendingOperations =
-                new ConcurrentLinkedQueue<Pair<Target, RemoteOperation>>();
+                new ConcurrentLinkedQueue<>();
         private RemoteOperation mCurrentOperation = null;
         private Target mLastTarget = null;
         private OwnCloudClient mOwnCloudClient = null;
         private FileDataStorageManager mStorageManager;
         
         
-        public ServiceHandler(Looper looper, OperationsService service) {
+        ServiceHandler(Looper looper, OperationsService service) {
             super(looper);
             if (service == null) {
                 throw new IllegalArgumentException("Received invalid NULL in parameter 'service'");
@@ -431,9 +441,9 @@ public class OperationsService extends Service {
          */
         private void nextOperation() {
             
-            //Log_OC.wtf(TAG, "nextOperation init" );
+            //Log_OC.e(TAG, "nextOperation init" );
             
-            Pair<Target, RemoteOperation> next = null;
+            Pair<Target, RemoteOperation> next;
             synchronized(mPendingOperations) {
                 next = mPendingOperations.peek();
             }
@@ -447,8 +457,7 @@ public class OperationsService extends Service {
                     if (mLastTarget == null || !mLastTarget.equals(next.first)) {
                         mLastTarget = next.first;
                         if (mLastTarget.mAccount != null) {
-                            OwnCloudAccount ocAccount = new OwnCloudAccount(mLastTarget.mAccount,
-                                    mService);
+                            OwnCloudAccount ocAccount = new OwnCloudAccount(mLastTarget.mAccount, mService);
                             mOwnCloudClient = OwnCloudClientManagerFactory.getDefaultSingleton().
                                     getClientFor(ocAccount, mService);
 
@@ -488,7 +497,7 @@ public class OperationsService extends Service {
                         result = mCurrentOperation.execute(mOwnCloudClient);
                     }
 
-                } catch (AccountsException e) {
+                } catch (AccountsException | IOException e) {
                     if (mLastTarget.mAccount == null) {
                         Log_OC.e(TAG, "Error while trying to get authorization for a NULL account",
                                 e);
@@ -498,15 +507,6 @@ public class OperationsService extends Service {
                     }
                     result = new RemoteOperationResult(e);
                     
-                } catch (IOException e) {
-                    if (mLastTarget.mAccount == null) {
-                        Log_OC.e(TAG, "Error while trying to get authorization for a NULL account",
-                                e);
-                    } else {
-                        Log_OC.e(TAG, "Error while trying to get authorization for " +
-                                mLastTarget.mAccount.name, e);
-                    }
-                    result = new RemoteOperationResult(e);
                 } catch (Exception e) {
                     if (mLastTarget.mAccount == null) {
                         Log_OC.e(TAG, "Unexpected error for a NULL account", e);
@@ -525,9 +525,6 @@ public class OperationsService extends Service {
                 mService.dispatchResultToOperationListeners(mCurrentOperation, result);
             }
         }
-
-
-
     }
 
 
@@ -560,40 +557,75 @@ public class OperationsService extends Service {
                 
                 String action = operationIntent.getAction();
                 if (action.equals(ACTION_CREATE_SHARE_VIA_LINK)) {  // Create public share via link
-                    String remotePath = operationIntent.getStringExtra(EXTRA_REMOTE_PATH);
-                    String password = operationIntent.getStringExtra(EXTRA_SHARE_PASSWORD);
-                    if (remotePath.length() > 0) {
-                        operation = new CreateShareViaLinkOperation(
-                                remotePath,
-                                password
-                        );
-                    }
 
-                } else if (ACTION_UPDATE_SHARE.equals(action)) {
                     String remotePath = operationIntent.getStringExtra(EXTRA_REMOTE_PATH);
-                    long shareId = operationIntent.getLongExtra(EXTRA_SHARE_ID, -1);
+
                     if (remotePath != null && remotePath.length() > 0) {
-                        operation = new UpdateShareViaLinkOperation(remotePath);
+
+                        operation = new CreateShareViaLinkOperation(remotePath);
+
+                        String name = operationIntent.getStringExtra(EXTRA_SHARE_NAME);
+                        ((CreateShareViaLinkOperation) operation).setName(name);
 
                         String password = operationIntent.getStringExtra(EXTRA_SHARE_PASSWORD);
-                        ((UpdateShareViaLinkOperation) operation).setPassword(password);
+                        ((CreateShareViaLinkOperation) operation).setPassword(password);
 
-                        long expirationDate = operationIntent.getLongExtra(
-                                EXTRA_SHARE_EXPIRATION_DATE_IN_MILLIS,
-                                0
-                        );
-                        ((UpdateShareViaLinkOperation)operation).setExpirationDate(
-                                expirationDate
-                        );
+                        long expirationDateMillis = operationIntent.
+                                getLongExtra(EXTRA_SHARE_EXPIRATION_DATE_IN_MILLIS, 0);
 
-                        boolean publicUpload = operationIntent.getBooleanExtra(EXTRA_SHARE_PUBLIC_UPLOAD, false);
-                        ((UpdateShareViaLinkOperation) operation).setPublicUpload(publicUpload);
+                        ((CreateShareViaLinkOperation) operation).
+                                setExpirationDateInMillis(expirationDateMillis);
 
-                    } else if (shareId > 0) {
-                        operation = new UpdateSharePermissionsOperation(shareId);
-                        int permissions = operationIntent.getIntExtra(EXTRA_SHARE_PERMISSIONS, 1);
-                        ((UpdateSharePermissionsOperation)operation).setPermissions(permissions);
+                        Boolean uploadToFolderPermission = operationIntent.
+                                getBooleanExtra(EXTRA_SHARE_PUBLIC_UPLOAD, false);
+
+                        ((CreateShareViaLinkOperation) operation).
+                                setPublicUpload(uploadToFolderPermission);
+
+                        int permissions = operationIntent.
+                                getIntExtra(EXTRA_SHARE_PERMISSIONS, OCShare.DEFAULT_PERMISSION);
+
+                        ((CreateShareViaLinkOperation) operation).
+                                setPermissions(permissions);
                     }
+
+                } else if (ACTION_UPDATE_SHARE_VIA_LINK.equals(action)) {
+                    long shareId = operationIntent.getLongExtra(EXTRA_SHARE_ID, -1);
+                    operation = new UpdateShareViaLinkOperation(shareId);
+
+                    String name = operationIntent.getStringExtra(EXTRA_SHARE_NAME);
+                    ((UpdateShareViaLinkOperation) operation).setName(name);
+
+                    String password = operationIntent.getStringExtra(EXTRA_SHARE_PASSWORD);
+                    ((UpdateShareViaLinkOperation) operation).setPassword(password);
+
+                    long expirationDate = operationIntent.getLongExtra(
+                            EXTRA_SHARE_EXPIRATION_DATE_IN_MILLIS,
+                            0
+                    );
+                    ((UpdateShareViaLinkOperation)operation).setExpirationDate(
+                            expirationDate
+                    );
+
+                    if (operationIntent.hasExtra(EXTRA_SHARE_PUBLIC_UPLOAD)) {
+                        ((UpdateShareViaLinkOperation) operation).setPublicUpload(
+                            operationIntent.getBooleanExtra(EXTRA_SHARE_PUBLIC_UPLOAD, false)
+                        );
+                    }
+
+                    if (operationIntent.hasExtra(EXTRA_SHARE_PERMISSIONS)) {
+                        ((UpdateShareViaLinkOperation) operation).setPermissions(
+                                operationIntent.getIntExtra(EXTRA_SHARE_PERMISSIONS,
+                                        OCShare.DEFAULT_PERMISSION)
+                        );
+                    }
+
+                } else if (ACTION_UPDATE_SHARE_WITH_SHAREE.equals(action)) {
+                    // Update private share, only permissions
+                    long shareId = operationIntent.getLongExtra(EXTRA_SHARE_ID, -1);
+                    operation = new UpdateSharePermissionsOperation(shareId);
+                    int permissions = operationIntent.getIntExtra(EXTRA_SHARE_PERMISSIONS, 1);
+                    ((UpdateSharePermissionsOperation)operation).setPermissions(permissions);
 
                 } else if (action.equals(ACTION_CREATE_SHARE_WITH_SHAREE)) {
                     // Create private share with user or group
@@ -611,36 +643,28 @@ public class OperationsService extends Service {
                     }
 
                 } else if (action.equals(ACTION_UNSHARE)) {  // Unshare file
-                    String remotePath = operationIntent.getStringExtra(EXTRA_REMOTE_PATH);
-                    ShareType shareType = (ShareType) operationIntent.
-                            getSerializableExtra(EXTRA_SHARE_TYPE);
-                    String shareWith = operationIntent.getStringExtra(EXTRA_SHARE_WITH);
-                    if (remotePath.length() > 0) {
-                        operation = new UnshareOperation(
-                                remotePath,
-                                shareType,
-                                shareWith,
-                                OperationsService.this
-                        );
-                    }
-                    
+                    long shareId = operationIntent.getLongExtra(EXTRA_SHARE_ID, -1);
+                    operation = new RemoveShareOperation(shareId);
+
                 } else if (action.equals(ACTION_GET_SERVER_INFO)) { 
                     // check OC server and get basic information from it
                     operation = new GetServerInfoOperation(serverUrl, OperationsService.this);
 
                 } else if (action.equals(ACTION_OAUTH2_GET_ACCESS_TOKEN)) {
-                    /// GET ACCESS TOKEN to the OAuth server
-                    String oauth2QueryParameters =
-                            operationIntent.getStringExtra(EXTRA_OAUTH2_QUERY_PARAMETERS);
-                    operation = new OAuth2GetAccessToken(
-                            getString(R.string.oauth2_client_id), 
-                            getString(R.string.oauth2_redirect_uri),       
-                            getString(R.string.oauth2_grant_type),
-                            oauth2QueryParameters);
+                    // CREATE ACCESS TOKEN to the OAuth server
+                    String code = operationIntent.getStringExtra(EXTRA_OAUTH2_AUTHORIZATION_CODE);
+
+                    OAuth2Provider oAuth2Provider = OAuth2ProvidersRegistry.getInstance().getProvider();
+                    OAuth2RequestBuilder builder = oAuth2Provider.getOperationBuilder();
+                    builder.setGrantType(OAuth2GrantType.AUTHORIZATION_CODE);
+                    builder.setRequest(OAuth2RequestBuilder.OAuthRequest.CREATE_ACCESS_TOKEN);
+                    builder.setAuthorizationCode(code);
+
+                    operation = builder.buildOperation();
 
                 } else if (action.equals(ACTION_GET_USER_NAME)) {
                     // Get User Name
-                    operation = new GetRemoteUserNameOperation();
+                    operation = new GetRemoteUserInfoOperation();
                     
                 } else if (action.equals(ACTION_RENAME)) {
                     // Rename file or folder
@@ -665,20 +689,24 @@ public class OperationsService extends Service {
                 } else if (action.equals(ACTION_SYNC_FILE)) {
                     // Sync file
                     String remotePath = operationIntent.getStringExtra(EXTRA_REMOTE_PATH);
-                    boolean syncFileContents =
-                            operationIntent.getBooleanExtra(EXTRA_SYNC_FILE_CONTENTS, true);
                     operation = new SynchronizeFileOperation(
-                            remotePath, account, syncFileContents, getApplicationContext()
+                            remotePath, account, getApplicationContext()
                     );
                     
                 } else if (action.equals(ACTION_SYNC_FOLDER)) {
                     // Sync folder (all its descendant files are sync'ed)
                     String remotePath = operationIntent.getStringExtra(EXTRA_REMOTE_PATH);
+                    boolean pushOnly = operationIntent.getBooleanExtra(EXTRA_PUSH_ONLY, false);
+                    boolean syncContentOfRegularFiles =
+                        operationIntent.getBooleanExtra(EXTRA_SYNC_REGULAR_FILES, false);
                     operation = new SynchronizeFolderOperation(
                             this,                       // TODO remove this dependency from construction time
                             remotePath,
                             account, 
-                            System.currentTimeMillis()  // TODO remove this dependency from construction time
+                            System.currentTimeMillis(),  // TODO remove this dependency from construction time
+                            pushOnly,
+                            false,
+                            syncContentOfRegularFiles
                     );
 
                 } else if (action.equals(ACTION_MOVE_FILE)) {
@@ -696,6 +724,7 @@ public class OperationsService extends Service {
                 } else if (action.equals(ACTION_CHECK_CURRENT_CREDENTIALS)) {
                     // Check validity of currently stored credentials for a given account
                     operation = new CheckCurrentCredentialsOperation(account);
+
                 }
             }
                 
@@ -705,7 +734,7 @@ public class OperationsService extends Service {
         }
 
         if (operation != null) {
-            return new Pair<Target , RemoteOperation>(target, operation);  
+            return new Pair<>(target, operation);
         } else {
             return null;
         }
@@ -730,7 +759,7 @@ public class OperationsService extends Service {
         }
         //LocalBroadcastManager lbm = LocalBroadcastManager.getInstance(this);
         //lbm.sendBroadcast(intent);
-        sendStickyBroadcast(intent);
+        mLocalBroadcastManager.sendBroadcast(intent);
     }
 
 
@@ -755,9 +784,7 @@ public class OperationsService extends Service {
         } else {
             intent.putExtra(EXTRA_SERVER_URL, target.mServerUrl);
         }
-        //LocalBroadcastManager lbm = LocalBroadcastManager.getInstance(this);
-        //lbm.sendBroadcast(intent);
-        sendStickyBroadcast(intent);
+        mLocalBroadcastManager.sendBroadcast(intent);
     }
 
 
@@ -788,7 +815,7 @@ public class OperationsService extends Service {
         }
         if (count == 0) {
             Pair<RemoteOperation, RemoteOperationResult> undispatched =
-                    new Pair<RemoteOperation, RemoteOperationResult>(operation, result);
+                    new Pair<>(operation, result);
             mUndispatchedFinishedOperations.put(((Runnable) operation).hashCode(), undispatched);
         }
         Log_OC.d(TAG, "Called " + count + " listeners");

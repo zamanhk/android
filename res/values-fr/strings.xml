@@ -13,30 +13,28 @@
   <string name="actionbar_send_file">Envoyer</string>
   <string name="actionbar_sort">Trier</string>
   <string name="actionbar_sort_title">Trier</string>
-  <string-array name="actionbar_sortby">
-    <item>par ordre alphabétique</item>
-    <item>du plus récent au plus ancien</item>
-  </string-array>
-  <!--TODO re-enable when server-side folder size calculation is available   
-    	<item>Biggest - Smallest</item>-->
+  <string name="actionbar_sort_by_name">A-Z</string>
+  <string name="actionbar_sort_by_date">Plus récent - Plus ancien</string>
+  <string name="actionbar_sort_by_size">Plus grand - Plus petit</string>
   <!--TODO re-enable when "Accounts" is available in Navigation Drawer-->
   <!--<string name="drawer_item_accounts">Accounts</string>-->
   <string name="drawer_item_all_files">Tous les fichiers</string>
   <!--TODO re-enable when "On Device" is available
     <string name="drawer_item_on_device">On device</string>-->
   <string name="drawer_item_settings">Paramètres</string>
-  <string name="drawer_item_uploads_list">Chargements</string>
+  <string name="drawer_item_uploads_list">Envois</string>
   <string name="drawer_close">Fermer</string>
   <string name="drawer_open">Ouvrir</string>
   <string name="prefs_category_general">Général</string>
   <string name="prefs_category_more">Plus</string>
+  <string name="prefs_category_security">Sécurité</string>
   <string name="prefs_accounts">Comptes</string>
-  <string name="prefs_manage_accounts">Gestion des comptes utilisateur</string>
+  <string name="prefs_manage_accounts">Gérer les comptes</string>
   <string name="prefs_passcode">Code de sécurité</string>
-  <string name="prefs_instant_upload">Téléversement immédiat des photos</string>
-  <string name="prefs_instant_upload_summary">Téléverser immédiatement les photos prises par la caméra</string>
-  <string name="prefs_instant_video_upload">Téléversement immédiat des vidéos</string>
-  <string name="prefs_instant_video_upload_summary">Téléverser immédiatement les vidéos prises par la caméra</string>
+  <string name="prefs_camera_picture_upload">Envoi d\'images</string>
+  <string name="prefs_camera_picture_upload_summary">Téléverser automatiquement les images prises par l\'appareil photo</string>
+  <string name="prefs_camera_video_upload">Téléversement de vidéo</string>
+  <string name="prefs_camera_video_upload_summary">Téléverser automatiquement les vidéos enregistrées par la caméra</string>
   <string name="prefs_log_title">Activer la journalisation</string>
   <string name="prefs_log_summary">Utilisé pour enregistrer les problèmes dans les logs</string>
   <string name="prefs_log_title_history">Historique de la journalisation</string>
@@ -48,6 +46,8 @@
   <string name="prefs_imprint">Mentions</string>
   <string name="prefs_remember_last_share_location">Mémoriser l\'emplacement de partage</string>
   <string name="prefs_remember_last_upload_location_summary">Mémoriser le dernier emplacement de téléversement</string>
+  <string name="pattern_stored">Modèles entreposés</string>
+  <string name="pattern_removed">Modèles supprimés</string>
   <string name="recommend_subject">Essayez %1$s sur votre smartphone !</string>
   <string name="recommend_text">J\'aimerais vous inviter à utiliser %1$s sur votre smartphone !
 Téléchargez-le ici : %2$s</string>
@@ -59,7 +59,7 @@ Téléchargez-le ici : %2$s</string>
   <string name="sync_string_files">Fichiers</string>
   <string name="setup_btn_connect">Connecter</string>
   <string name="uploader_btn_upload_text">Téléverser</string>
-  <string name="uploader_top_message">Sélectionner le dossier d\'envoi :</string>
+  <string name="uploader_top_message">Choisir le dossier de téléversement</string>
   <string name="uploader_wrn_no_account_title">Aucun compte n\'a été trouvé</string>
   <string name="uploader_wrn_no_account_text">Aucun compte %1$s sur l\'appareil. Veuillez configurer un compte au préalable.</string>
   <string name="uploader_wrn_no_account_setup_btn_text">Configuration</string>
@@ -74,14 +74,16 @@ Téléchargez-le ici : %2$s</string>
   <string name="file_list_seconds_ago">il y a quelques secondes</string>
   <string name="file_list_empty">Il n\'y a rien ici ! Envoyez donc quelque chose :)</string>
   <string name="file_list_loading">Chargement...</string>
-  <string name="file_list_no_app_for_file_type">Aucune application trouvée pour ce type de fichier !</string>
+  <string name="file_list_no_app_for_file_type">Aucune application trouvée pour ce type de fichier</string>
   <string name="local_file_list_empty">Aucun fichier n\'est présent dans ce dossier.</string>
+  <string name="local_file_list_empty_just_folders">Il n\'y a pas de dossiers dans ce dossier.</string>
   <string name="upload_list_empty">Aucun téléversement disponible.</string>
   <string name="file_list_folder">dossier</string>
   <string name="file_list_folders">dossiers</string>
   <string name="file_list_file">fichier</string>
   <string name="file_list_files">fichiers</string>
   <string name="filedetails_select_file">Sélectionnez un fichier pour afficher des informations supplémentaires</string>
+  <string name="upload_files_title">Fichiers</string>
   <string name="filedetails_size">Taille :</string>
   <string name="filedetails_type">Type :</string>
   <string name="filedetails_created">Créé le :</string>
@@ -104,7 +106,8 @@ Téléchargez-le ici : %2$s</string>
   <string name="common_loading">Chargement…</string>
   <string name="common_unknown">Inconnu</string>
   <string name="common_error_unknown">Erreur inconnue </string>
-  <string name="about_title">À propos de</string>
+  <string name="common_pending">En attente</string>
+  <string name="about_title">À propos</string>
   <string name="change_password">Changer de mot de passe</string>
   <string name="delete_account">Supprimer le compte</string>
   <string name="create_account">Créer un compte</string>
@@ -117,10 +120,18 @@ Téléchargez-le ici : %2$s</string>
   <string name="uploader_upload_failed_ticker">Échec de l\'envoi</string>
   <string name="uploader_upload_failed_content_single">L\'envoi de %1$s a échoué</string>
   <string name="uploader_upload_failed_credentials_error">Le téléversement a échoué, vous devez vous reconnecter</string>
+  <string name="uploader_upload_failed_ssl_certificate_not_trusted">Le certificat du serveur n\'est pas sûr</string>
+  <string name="uploader_upload_text_dialog_title">Saisissez le nom du nouveau fichier</string>
+  <string name="uploader_upload_text_dialog_filename_error_empty">Le nom de fichier ne doit pas être vide</string>
+  <string name="uploader_upload_text_dialog_filename_error_length_max">Le nom de fichier ne doit pas contenir plus de %d caractères</string>
+  <string name="uploader_upload_text_filename_hint">Nom du fichier</string>
+  <string name="ssl_certificate_not_trusted">Le certificat du serveur n\'est pas sûr</string>
   <string name="uploads_view_title">Chargements</string>
   <string name="uploads_view_group_current_uploads">En ce moment</string>
   <string name="uploads_view_group_failed_uploads">Échoué (appuyer pour réessayer)</string>
   <string name="uploads_view_group_finished_uploads">Téléversé</string>
+  <string name="uploads_view_group_file_count">%d Fichiers</string>
+  <string name="uploads_view_group_file_count_single">%d fichiers</string>
   <string name="uploads_view_upload_status_succeeded">Terminé</string>
   <string name="uploads_view_upload_status_cancelled">Annulé</string>
   <string name="uploads_view_upload_status_paused">En pause</string>
@@ -131,11 +142,13 @@ Téléchargez-le ici : %2$s</string>
   <string name="uploads_view_upload_status_failed_file_error">Erreur de fichier</string>
   <string name="uploads_view_upload_status_failed_localfile_error">Fichier local non trouvé</string>
   <string name="uploads_view_upload_status_failed_permission_error">Erreur de permissions</string>
+  <string name="uploads_view_upload_status_failed_firewall_error">Interdit à cause d\'une règle du pare-feu</string>
   <string name="uploads_view_upload_status_conflict">Conflit</string>
   <string name="uploads_view_upload_status_service_interrupted">L\'application a été arrêté</string>
   <string name="uploads_view_upload_status_unknown_fail">Erreur inconnue </string>
   <string name="uploads_view_upload_status_waiting_for_wifi">En attente d\'une connexion wifi</string>
   <string name="uploads_view_later_waiting_to_upload">En attente de chargement</string>
+  <string name="uploads_view_unsupported_media_type">Type de média non pris en charge</string>
   <string name="downloader_download_in_progress_ticker">Téléchargement en cours…</string>
   <string name="downloader_download_in_progress_content">Téléchargement en cours de %2$s, %1$d%% effectués</string>
   <string name="downloader_download_succeeded_ticker">Téléchargement réussi</string>
@@ -144,20 +157,21 @@ Téléchargez-le ici : %2$s</string>
   <string name="downloader_download_failed_content">Le téléchargement de %1$s a échoué</string>
   <string name="downloader_not_downloaded_yet">Pas encore téléchargé</string>
   <string name="downloader_download_failed_credentials_error">Le téléchargement a échoué, vous devez vous reconnecter</string>
+  <string name="downloader_download_forbidden_permissions">de télécharger ce fichier</string>
   <string name="common_choose_account">Choisissez un compte</string>
   <string name="sync_fail_ticker">La synchronisation a échoué</string>
   <string name="sync_fail_ticker_unauthorized">La synchronisation a échoué, vous devez vous reconnecter</string>
   <string name="sync_fail_content">La synchronisation de %1$s ne peut être achevée</string>
   <string name="sync_fail_content_unauthorized">Mot de passe non valide pour %1$s</string>
   <string name="sync_conflicts_in_favourites_ticker">Des conflits ont été trouvés</string>
-  <string name="sync_conflicts_in_favourites_content">%1$d fichiers à garder synchronisés n\'ont pu être synchronisés</string>
+  <string name="sync_conflicts_in_favourites_content">%1$d fichiers à synchroniser n\'ont pu être synchronisés</string>
   <string name="sync_fail_in_favourites_ticker">La synchronisation des fichiers a échoué</string>
   <string name="sync_fail_in_favourites_content">Le contenu de %1$d fichiers n\'a pu être synchronisé (%2$d conflits)</string>
   <string name="sync_foreign_files_forgotten_ticker">Certains fichiers locaux ont été oubliés</string>
   <string name="sync_foreign_files_forgotten_content">%1$d fichiers du dossier %2$s n\'ont pas pu être copiés dans</string>
   <string name="sync_foreign_files_forgotten_explanation">Depuis la version 1.3.16, les fichiers envoyés depuis cet appareil sont copiés dans le dossier local %1$s pour éviter une perte de données lorsqu\'un même fichier est synchronisé avec plusieurs comptes.
 
-En raison de cette modification, tous les fichiers envoyés avec des versions antérieures de cette application ont été copiés dans le dossier %2$s. Cependant, une erreur a empêché l\'achèvement de cette opération pendant la synchronisation du compte. Vous pouvez soit laisser les fichiers tels quels et supprimer le lien vers %3$s, soit déplacer les fichiers dans le dossier %1$s et garder le lien vers %4$s.
+En raison de cette modification, tous les fichiers envoyés avec des versions antérieures de cette application ont été copiés dans le dossier %2$s. Cependant, une erreur a empêché l\'achèvement de cette opération pendant la synchronisation du compte. Vous pouvez soit laisser les fichiers tels quels et supprimer le lien vers %3$s, soit déplacer les fichiers dans le dossier %1$s et conserver le lien vers %4$s.
 
 Ci-dessous la liste des fichiers locaux, et les fichiers distants dans %5$s auxquels ils étaient liés.</string>
   <string name="sync_current_folder_was_removed">Le dossier %1$s n\'existe plus</string>
@@ -195,6 +209,7 @@ Ci-dessous la liste des fichiers locaux, et les fichiers distants dans %5$s auxq
   <string name="media_rewind_description">Bouton de rembobinage</string>
   <string name="media_play_pause_description">Bouton de lecture ou de pause</string>
   <string name="media_forward_description">Bouton d\'avance rapide</string>
+  <string name="upload_from_camera_title">Image de la caméra</string>
   <string name="auth_getting_authorization">Contrôle d\'autorisation ...</string>
   <string name="auth_trying_to_login">Tentative de connexion ...</string>
   <string name="auth_no_net_conn_title">Pas de connexion réseau</string>
@@ -205,12 +220,9 @@ Ci-dessous la liste des fichiers locaux, et les fichiers distants dans %5$s auxq
   <string name="auth_account_not_new">Un compte pour les mêmes utilisateur et serveur existe déjà sur cet appareil</string>
   <string name="auth_account_not_the_same">L\'utilisateur entré ne correspond pas à l\'utilisateur de ce compte</string>
   <string name="auth_unknown_error_title">Une erreur inconnue s\'est produite.</string>
-  <string name="auth_unknown_host_title">Impossible de trouver l\'hôte</string>
   <string name="auth_incorrect_path_title">Aucune instance du serveur n\'a été trouvée</string>
-  <string name="auth_timeout_title">Le serveur a pris trop de temps à répondre</string>
   <string name="auth_incorrect_address_title">Adresse du serveur non valable</string>
   <string name="auth_ssl_general_error_title">Échec de l\'initialisation SSL</string>
-  <string name="auth_ssl_unverified_server_title">Impossible de vérifier l\'identité du serveur SSL</string>
   <string name="auth_bad_oc_version_title">La version du serveur n\'est pas reconnue</string>
   <string name="auth_wrong_connection_title">Impossible d\'établir la connexion</string>
   <string name="auth_secure_connection">Connexion sécurisée établie</string>
@@ -228,14 +240,20 @@ Ci-dessous la liste des fichiers locaux, et les fichiers distants dans %5$s auxq
 </string>
   <string name="auth_can_not_auth_against_server">Impossible de s\'authentifier sur ce serveur</string>
   <string name="auth_account_does_not_exist">Le compte n\'existe pas encore sur ce périphérique</string>
+  <string name="set_available_offline">Rendre disponible hors-ligne</string>
+  <string name="unset_available_offline">Ne plus rendre disponible hors-ligne</string>
   <string name="common_rename">Renommer</string>
   <string name="common_remove">Supprimer</string>
-  <string name="confirmation_remove_alert">Voulez-vous vraiment supprimer %1$s ?</string>
+  <string name="confirmation_remove_file_alert">Voulez-vous vraiment supprimer %1$s ?</string>
   <string name="confirmation_remove_folder_alert">Voulez-vous vraiment supprimer %1$s et son contenu ?</string>
   <string name="confirmation_remove_local">Local seulement</string>
+  <string name="confirmation_remove_account_alert">Voulez-vous vraiment supprimer le compte %1$s ?</string>
+  <string name="confirmation_remove_public_share_title">Supprimer le lien</string>
+  <string name="confirmation_remove_public_share_message">Voulez-vous vraiment supprimer %1$s ?</string>
   <string name="remove_success_msg">Suppression effectuée avec succès</string>
   <string name="remove_fail_msg">Suppression impossible</string>
   <string name="rename_dialog_title">Entrez un nouveau nom</string>
+  <string name="available_offline_inherited_msg">Un dossier contenant ce fichier est disponible hors ligne</string>
   <string name="rename_local_fail_msg">La version locale ne peut être renommée, veuillez réessayer avec un nom différent</string>
   <string name="rename_server_fail_msg">Renommage impossible</string>
   <string name="sync_file_fail_msg">Le fichier distant n\'a pu être vérifié</string>
@@ -251,8 +269,8 @@ Ci-dessous la liste des fichiers locaux, et les fichiers distants dans %5$s auxq
   <string name="activity_chooser_title">Envoyer le lien vers…</string>
   <string name="wait_for_tmp_copy_from_private_storage">Copie du fichier depuis le stockage privé</string>
   <string name="oauth_check_onoff">Connexion avec oAuth2</string>
-  <string name="oauth_login_connection">Connexion au serveur oAuth2…</string>
-  <string name="ssl_validator_header">L\'identité du site ne peut être vérifiée</string>
+  <string name="oauth_login_connection">Connexion au serveur OAuth2…</string>
+  <string name="ssl_validator_header">L\'identité de ce serveur ne peut pas être vérifiée</string>
   <string name="ssl_validator_reason_cert_not_trusted">- Le certificat du serveur n\'est pas sûr</string>
   <string name="ssl_validator_reason_cert_expired">- Le certificat du serveur a expiré</string>
   <string name="ssl_validator_reason_cert_not_yet_valid">- Le certificat du serveur n\'est pas encore valide</string>
@@ -285,18 +303,21 @@ Ci-dessous la liste des fichiers locaux, et les fichiers distants dans %5$s auxq
   <string name="placeholder_filesize">389 Ko</string>
   <string name="placeholder_timestamp">18/05/2012 12:23</string>
   <string name="placeholder_media_time">12:23:45</string>
-  <string name="instant_upload_on_wifi">Téléverser les images via une connexion WiFi uniquement</string>
-  <string name="instant_video_upload_on_wifi">Téléverser les images via une connexion WiFi uniquement</string>
-  <string name="instant_upload_path">/InstantUpload</string>
+  <string name="camera_picture_upload_on_wifi">Téléverser les images via une connexion WiFi uniquement</string>
+  <string name="camera_video_upload_on_wifi">Téléverser les images via une connexion WiFi uniquement</string>
+  <string name="camera_upload_path">/TeleversementCamera</string>
+  <string name="confirmation_disable_camera_uploads_title">Confirmer</string>
+  <string name="confirmation_disable_pictures_upload_message">Êtes-vous sûr de vouloir désactiver cette fonction ? Les images en suspens ne seront pas téléversées</string>
+  <string name="confirmation_disable_videos_upload_message">Êtes-vous sûr de vouloir désactiver cette fonction ? Les vidéos en suspens ne seront pas téléversées</string>
   <string name="conflict_title">Conflit de fichiers</string>
-  <string name="conflict_message">Quel(s) fichier(s) voulez-vous garder ? Si vous sélectionnez les deux, un chiffre sera ajouté au nom du fichier local.</string>
-  <string name="conflict_keep_both">Garder les deux versions</string>
+  <string name="conflict_message">Quel(s) fichier(s) voulez-vous conserver ? Si vous sélectionnez les deux, un chiffre sera ajouté au nom du fichier local.</string>
+  <string name="conflict_keep_both">Conserver les deux versions</string>
   <string name="conflict_use_local_version">version locale</string>
   <string name="conflict_use_server_version">version serveur</string>
   <string name="preview_image_description">Prévisualisation de l\'image</string>
   <string name="preview_image_error_unknown_format">Cette image ne peut pas être affichée</string>
   <string name="error__upload__local_file_not_copied">%1$s n\'a pas pu être copié dans le dossier local %2$s</string>
-  <string name="prefs_instant_upload_path_title">Chemin du dossier de téléversement</string>
+  <string name="prefs_camera_picture_upload_path_title">Chemin d\'accès au répertoire de téléversement des images</string>
   <string name="share_link_no_support_share_api">Désolé, le partage n\'est pas disponible sur votre serveur. Veuillez contacter votre administrateur.</string>
   <string name="share_link_file_no_exist">Impossible de partager. Vérifiez que le fichier est bien présent</string>
   <string name="share_link_file_error">Une erreur est survenue lors de la tentative de partage de ce fichier ou répertoire</string>
@@ -314,10 +335,9 @@ Ci-dessous la liste des fichiers locaux, et les fichiers distants dans %5$s auxq
   <string name="clipboard_label">Texte copié depuis %1$s</string>
   <string name="error_cant_bind_to_operations_service">Erreur critique : impossible de réaliser les opérations</string>
   <string name="network_error_socket_exception">Une erreur est survenue pendant la connexion au serveur.</string>
-  <string name="network_error_socket_timeout_exception">Une erreur est survenue pendant l\'attente du serveur. L\'opération n\'a pas pu être effectuée</string>
-  <string name="network_error_connect_timeout_exception">Une erreur est survenue pendant l\'attente du serveur. L\'opération n\'a pas pu être effectuée</string>
-  <string name="network_host_not_available">L\'opération n\'a pas pu être terminée, le serveur n\'est pas disponible</string>
-  <string name="empty"></string>
+  <string name="network_error_socket_timeout_exception">Le serveur a pris trop de temps à répondre</string>
+  <string name="network_error_connect_timeout_exception">Le serveur a pris trop de temps pour se connecter</string>
+  <string name="network_host_not_available">Le serveur n\'a pas pu être joint</string>
   <string name="forbidden_permissions">Vous n\'avez pas la permission %s</string>
   <string name="forbidden_permissions_rename">de renommer ce fichier</string>
   <string name="forbidden_permissions_delete">d’effacer ce fichier</string>
@@ -326,9 +346,11 @@ Ci-dessous la liste des fichiers locaux, et les fichiers distants dans %5$s auxq
   <string name="update_link_forbidden_permissions">de modifier ce partage</string>
   <string name="forbidden_permissions_create">de créer ce fichier</string>
   <string name="uploader_upload_forbidden_permissions">de téléverser dans ce dossier</string>
+  <string name="uploader_upload_forbidden">Le téléversement n\'est pas autorisé</string>
   <string name="downloader_download_file_not_found">Ce fichier n’est plus disponible sur le serveur</string>
   <string name="prefs_category_accounts">Comptes</string>
   <string name="prefs_add_account">Ajouter un compte</string>
+  <string name="drawer_manage_accounts">Gestion des comptes utilisateur</string>
   <string name="auth_redirect_non_secure_connection_title">Le connexion sécurisée est redirigée vers une route non-sécurisée.</string>
   <string name="actionbar_logger">Journaux</string>
   <string name="log_send_history_button">Envoyer l\'Historique</string>
@@ -350,9 +372,9 @@ Ci-dessous la liste des fichiers locaux, et les fichiers distants dans %5$s auxq
   <string name="copy_file_invalid_overwrite">Fichier déjà existant dans le dossier de destination</string>
   <string name="copy_file_error">Une erreur est survenue lors de la copie de ce fichier ou dossier</string>
   <string name="forbidden_permissions_copy">de copier ce fichier</string>
-  <string name="prefs_category_instant_uploading">Téléversement immédiat</string>
+  <string name="prefs_category_camera_upload">Téléversements de la caméra</string>
   <string name="prefs_category_details">Détails</string>
-  <string name="prefs_instant_video_upload_path_title">Répertoire de téléversement des vidéos</string>
+  <string name="prefs_camera_video_upload_path_title">Chemin d\'accès au répertoire de téléversement des vidéos</string>
   <string name="sync_folder_failed_content">La synchronisation du dossier %1$s n\'a pas pu être terminée</string>
   <string name="shared_subject_header">a partagé</string>
   <string name="with_you_subject_header">avec vous</string>
@@ -370,22 +392,32 @@ Ci-dessous la liste des fichiers locaux, et les fichiers distants dans %5$s auxq
   <string name="file_list__footer__files">%1$d fichiers</string>
   <string name="file_list__footer__files_and_folder">%1$d fichiers, 1 dossier</string>
   <string name="file_list__footer__files_and_folders">%1$d fichiers, %2$d dossiers</string>
-  <string name="prefs_instant_behaviour_dialogTitle">Le fichier original sera...</string>
-  <string name="prefs_instant_behaviour_title">Le fichier original sera...</string>
+  <string name="prefs_camera_upload_source_path_title">Dossier de l\'appareil photo (%1$s)</string>
+  <string name="prefs_camera_upload_source_path_title_required">Requis</string>
+  <string name="prefs_camera_upload_source_path_title_optional">Optionnel</string>
+  <string name="prefs_camera_upload_behaviour_dialogTitle">Le fichier original sera...</string>
+  <string name="prefs_camera_upload_behaviour_title">Le fichier original sera...</string>
   <string name="upload_copy_files">Copier le fichier</string>
   <string name="upload_move_files">Déplacer le fichier</string>
   <string name="pref_behaviour_entries_keep_file">gardé dans le dossier original</string>
   <string name="pref_behaviour_entries_move">déplacé vers le dossier de l\'application</string>
-  <string name="share_dialog_title">Partage</string>
+  <string name="share_dialog_title">Partager</string>
   <string name="share_file">Partager %1$s</string>
-  <string name="share_with_user_section_title">Partager avec des utilisateurs et des groupes</string>
+  <string name="share_with_user_section_title">Utilisateurs et Groupes</string>
   <string name="share_no_users">Aucune donnée partagée avec des utilisateurs pour le moment</string>
+  <string name="share_incompatible_version">Le partage n\'est disponible qu\'à partir de la version 8.2 du serveur</string>
   <string name="share_add_user_or_group">Ajouter un Utilisateur ou un Groupe</string>
-  <string name="share_via_link_section_title">Partager par lien public</string>
-  <string name="share_via_link_expiration_date_label">Spécifier une date d\'expiration</string>
-  <string name="share_via_link_password_label">Protéger par un mot de passe</string>
+  <string name="share_via_link_section_title">Liens publics</string>
+  <string name="share_via_link_create_title">Créer un lien de partage</string>
+  <string name="share_via_link_edit_title">Modifier le lien de partage</string>
+  <string name="share_via_link_name_label">Nom du lien</string>
+  <string name="share_cancel_public_link_button">Anuler</string>
+  <string name="share_confirm_public_link_button">Enregistrer</string>
+  <string name="share_via_link_expiration_date_label">Expiration</string>
+  <string name="share_via_link_password_label">Mot de passe</string>
   <string name="share_via_link_password_title">Sécurisé</string>
   <string name="share_via_link_edit_permission_label">Permettre la modification</string>
+  <string name="share_via_link_show_file_listing_label">Montrer la liste des fichiers</string>
   <string name="share_get_public_link_button">Obtenir le lien</string>
   <string name="share_with_title">Partager avec ...</string>
   <string name="share_with_edit_title">Partager avec %1$s</string>
@@ -415,4 +447,42 @@ Ci-dessous la liste des fichiers locaux, et les fichiers distants dans %5$s auxq
   <string name="manage_space_error">Certains fichiers n\'ont pu être supprimés.</string>
   <string name="permission_storage_access">Des permissions supplémentaires sont exigées pour téléverser &amp; télécharger des fichiers.</string>
   <string name="local_file_not_found_toast">Le fichier n\'a pas été trouvé sur le système de fichier local</string>
+  <string name="confirmation_remove_files_alert">Êtes-vous certain de vouloir supprimer les objets sélectionnés ?</string>
+  <string name="confirmation_remove_folders_alert">Êtes-vous certain de vouloir supprimer les objets sélectionnés ainsi que leurs contenus ?</string>
+  <string name="failed_upload_quota_exceeded_text">Espace insuffisant pour ce compte</string>
+  <string name="auth_forbidden">Authentification interdite</string>
+  <string name="actionbar_privacy_policy">Politique de confidentialité</string>
+  <string name="prefs_privacy_policy">Politique de confidentialité</string>
+  <string name="privacy_policy_error">Une erreur s\'est produite : </string>
+  <string name="service_unavailable">Le serveur est indisponible</string>
+  <string name="streaming_certificate_error">La diffusion n\'a pas pu être initilisée parce que le certificat de votre serveur n\'est pas de confiance. Le téléchargement du fichier va démarrer automatiquement</string>
+  <string name="streaming_unrecognized_input">Ce format de vidéo n\'est pas supporté</string>
+  <string name="streaming_file_not_found_error">Cette vidéo n\'est plus disponible sur le serveur</string>
+  <string name="streaming_crossed_redirection">La diffusion n\'est pas autorisée via des redirections croisées</string>
+  <string name="previewing_video_common_error">Cette vidéo n\'a pas pu être chargée</string>
+  <string name="previewing_video_not_supported">La prévisualisation de vidéo n\'est pas supportée sur votre version d\'Android. Le téléchargement du fichier va démarrer automatiquement.</string>
+  <string name="streaming_position_not_available">\"Position non disponible\"</string>
+  <string name="error_no_network_connection">L\'appareil n\'est connecté à aucun réseau</string>
+  <string name="share_no_public_links">Aucun lien public n\'a encore été créé </string>
+  <string name="share_no_link_in_this_share">Ce partage n\'a pas de lien</string>
+  <string name="share_warning_about_forwarding_public_links">Quiconque dispose du lien a accès aux fichiers/dossiers</string>
+  <string name="share_via_link_default_password">*****</string>
+  <string name="share_via_link_password_enforced_label">Mot de passe *</string>
+  <string name="share_via_link_expiration_date_enforced_label">Date d\'expiration *</string>
+  <string name="share_via_link_expiration_date_explanation_label">Ce lien public expirera au plus tard %1$d jours après sa création</string>
+  <string name="share_via_link_default_name_template">lien %1$s</string>
+  <string name="private_link_info">Ceci est un lien privé ; seules les personnes ayant accès à ce fichier/dossier peuvent l\'utiliser. Utilisez-le comme lien permanent pour vous-même ou pour pointer sur ce fichier/dossier dans le partage avec d\'autres utilisateur.</string>
+  <string name="file_private_link_error">Le lien privé n\'est pas disponible pour ce fichier</string>
+  <string name="download_notification_channel_name">Téléchargements</string>
+  <string name="download_notification_channel_description">Voir le nom du fichier téléchargé et sa progression</string>
+  <string name="upload_notification_channel_name">Téléversements</string>
+  <string name="upload_notification_channel_description">Voir le nom du fichier téléverser et sa progression</string>
+  <string name="media_service_notification_channel_name">lecteur de musique</string>
+  <string name="media_service_notification_channel_description">Voir le lecteur de musique</string>
+  <string name="file_sync_notification_channel_name">synchronisation de fichier</string>
+  <string name="file_sync_notification_channel_description">Voir le résultat de la synchronisation de fichier</string>
+  <plurals name="items_selected_count">
+    <item quantity="one">%d sélectionné</item>
+    <item quantity="other">%d sélectionnés</item>
+  </plurals>
 </resources>

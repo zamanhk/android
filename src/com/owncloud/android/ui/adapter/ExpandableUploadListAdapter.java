@@ -3,7 +3,7 @@
  *
  *  @author LukeOwncloud
  *  @author masensio
- *  Copyright (C) 2016 ownCloud Inc.
+ *  Copyright (C) 2016 ownCloud GmbH.
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License version 2,
@@ -19,9 +19,11 @@
  */
 package com.owncloud.android.ui.adapter;
 
+import android.accounts.Account;
 import android.content.Context;
 import android.database.DataSetObserver;
 import android.graphics.Bitmap;
+import android.support.design.widget.Snackbar;
 import android.text.format.DateUtils;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -33,9 +35,9 @@ import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.owncloud.android.R;
+import com.owncloud.android.authentication.AccountUtils;
 import com.owncloud.android.datamodel.OCFile;
 import com.owncloud.android.datamodel.ThumbnailsCacheManager;
 import com.owncloud.android.datamodel.UploadsStorageManager;
@@ -43,6 +45,8 @@ import com.owncloud.android.datamodel.UploadsStorageManager.UploadStatus;
 import com.owncloud.android.db.OCUpload;
 import com.owncloud.android.db.UploadResult;
 import com.owncloud.android.files.services.FileUploader;
+import com.owncloud.android.files.services.TransferRequester;
+import com.owncloud.android.lib.common.OwnCloudAccount;
 import com.owncloud.android.lib.common.network.OnDatatransferProgressListener;
 import com.owncloud.android.lib.common.utils.Log_OC;
 import com.owncloud.android.ui.activity.FileActivity;
@@ -87,6 +91,10 @@ public class ExpandableUploadListAdapter extends BaseExpandableListAdapter imple
             return name;
         }
 
+        public int getGroupCount() {
+            return items == null ? 0 : items.length;
+        }
+
         public Comparator<OCUpload> comparator = new Comparator<OCUpload>() {
 
             @Override
@@ -95,6 +103,7 @@ public class ExpandableUploadListAdapter extends BaseExpandableListAdapter imple
                     if (!upload2.getUploadStatus().equals(UploadStatus.UPLOAD_IN_PROGRESS)) {
                         return -1;
                     }
+                    // both are in progress
                     FileUploader.FileUploaderBinder binder = mParentActivity.getFileUploaderBinder();
                     if (binder != null) {
                         if (binder.isUploadingNow(upload1)) {
@@ -106,7 +115,7 @@ public class ExpandableUploadListAdapter extends BaseExpandableListAdapter imple
                 } else if (upload2.getUploadStatus().equals(UploadStatus.UPLOAD_IN_PROGRESS)) {
                     return 1;
                 }
-                if (upload1.getUploadEndTimestamp() == 0) {
+                if (upload1.getUploadEndTimestamp() == 0 || upload2.getUploadEndTimestamp() == 0) {
                     return compareUploadId(upload1, upload2);
                 } else {
                     return compareUpdateTime(upload1, upload2);
@@ -223,7 +232,12 @@ public class ExpandableUploadListAdapter extends BaseExpandableListAdapter imple
 
             // file size
             TextView fileSizeTextView = (TextView) view.findViewById(R.id.upload_file_size);
-            fileSizeTextView.setText(DisplayUtils.bytesToHumanReadable(upload.getFileSize()) + ", ");
+            fileSizeTextView.setText(
+                DisplayUtils.bytesToHumanReadable(
+                    upload.getFileSize(),
+                    mParentActivity
+                ) + ", "
+            );
 
             //* upload date
             TextView uploadDateTextView = (TextView) view.findViewById(R.id.upload_date);
@@ -238,7 +252,17 @@ public class ExpandableUploadListAdapter extends BaseExpandableListAdapter imple
             uploadDateTextView.setText(dateString);
 
             TextView accountNameTextView = (TextView) view.findViewById(R.id.upload_account);
-            accountNameTextView.setText(upload.getAccountName());
+            try {
+                Account account = AccountUtils.getOwnCloudAccountByName(mParentActivity, upload.getAccountName());
+                OwnCloudAccount oca = new OwnCloudAccount(account, mParentActivity);
+                accountNameTextView.setText(
+                    oca.getDisplayName() + " @ " +
+                    DisplayUtils.convertIdn(account.name.substring(account.name.lastIndexOf("@") + 1), false)
+                );
+            } catch (Exception e) {
+                Log_OC.w(TAG, "Couldn't get display name for account, using old style");
+                accountNameTextView.setText(upload.getAccountName());
+            }
 
             TextView statusTextView = (TextView) view.findViewById(R.id.upload_status);
 
@@ -297,7 +321,6 @@ public class ExpandableUploadListAdapter extends BaseExpandableListAdapter imple
                     }
                     uploadDateTextView.setVisibility(View.GONE);
                     pathTextView.setVisibility(View.GONE);
-                    fileSizeTextView.setVisibility(View.GONE);
                     progressBar.invalidate();
                     break;
 
@@ -315,7 +338,7 @@ public class ExpandableUploadListAdapter extends BaseExpandableListAdapter imple
             ImageButton rightButton = (ImageButton) view.findViewById(R.id.upload_right_button);
             if (upload.getUploadStatus() == UploadStatus.UPLOAD_IN_PROGRESS) {
                 //Cancel
-                rightButton.setImageResource(R.drawable.ic_cancel);
+                rightButton.setImageResource(R.drawable.ic_action_cancel_grey);
                 rightButton.setVisibility(View.VISIBLE);
                 rightButton.setOnClickListener(new OnClickListener() {
                     @Override
@@ -330,7 +353,7 @@ public class ExpandableUploadListAdapter extends BaseExpandableListAdapter imple
 
             } else if (upload.getUploadStatus() == UploadStatus.UPLOAD_FAILED) {
                 //Delete
-                rightButton.setImageResource(R.drawable.ic_action_delete);
+                rightButton.setImageResource(R.drawable.ic_action_delete_grey);
                 rightButton.setVisibility(View.VISIBLE);
                 rightButton.setOnClickListener(new OnClickListener() {
                     @Override
@@ -361,17 +384,22 @@ public class ExpandableUploadListAdapter extends BaseExpandableListAdapter imple
                     view.setOnClickListener(new OnClickListener() {
                         @Override
                         public void onClick(View v) {
-                        File file = new File(upload.getLocalPath());
-                        if (file.exists()) {
-                            FileUploader.UploadRequester requester = new FileUploader.UploadRequester();
-                            requester.retry(mParentActivity, upload);
-                            refreshView();
-                        } else {
-                            final String message = String.format(
-                                mParentActivity.getString(R.string.local_file_not_found_toast)
-                            );
-                            Toast.makeText(mParentActivity, message, Toast.LENGTH_SHORT).show();
-                        }
+                            File file = new File(upload.getLocalPath());
+                            if (file.exists()) {
+                                TransferRequester requester = new TransferRequester();
+                                requester.retry(mParentActivity, upload);
+                                refreshView();
+                            } else {
+                                final String message = String.format(
+                                    mParentActivity.getString(R.string.local_file_not_found_toast)
+                                );
+                                Snackbar snackbar = Snackbar.make(
+                                    v.getRootView().findViewById(android.R.id.content),
+                                    message,
+                                    Snackbar.LENGTH_LONG
+                                );
+                                snackbar.show();
+                            }
                         }
                     });
                 }
@@ -390,7 +418,7 @@ public class ExpandableUploadListAdapter extends BaseExpandableListAdapter imple
             fakeFileToCheatThumbnailsCacheManagerInterface.setStoragePath(upload.getLocalPath());
             fakeFileToCheatThumbnailsCacheManagerInterface.setMimetype(upload.getMimeType());
 
-            boolean allowedToCreateNewThumbnail = (ThumbnailsCacheManager.cancelPotentialWork(
+            boolean allowedToCreateNewThumbnail = (ThumbnailsCacheManager.cancelPotentialThumbnailWork(
                     fakeFileToCheatThumbnailsCacheManagerInterface,
                     fileIcon)
             );
@@ -415,8 +443,8 @@ public class ExpandableUploadListAdapter extends BaseExpandableListAdapter imple
                         if (thumbnail == null) {
                             thumbnail = ThumbnailsCacheManager.mDefaultImg;
                         }
-                        final ThumbnailsCacheManager.AsyncDrawable asyncDrawable =
-                                new ThumbnailsCacheManager.AsyncDrawable(
+                        final ThumbnailsCacheManager.AsyncThumbnailDrawable asyncDrawable =
+                                new ThumbnailsCacheManager.AsyncThumbnailDrawable(
                                         mParentActivity.getResources(),
                                         thumbnail,
                                         task
@@ -447,8 +475,8 @@ public class ExpandableUploadListAdapter extends BaseExpandableListAdapter imple
                         if (thumbnail == null) {
                             thumbnail = ThumbnailsCacheManager.mDefaultImg;
                         }
-                        final ThumbnailsCacheManager.AsyncDrawable asyncDrawable =
-                                new ThumbnailsCacheManager.AsyncDrawable(
+                        final ThumbnailsCacheManager.AsyncThumbnailDrawable asyncDrawable =
+                                new ThumbnailsCacheManager.AsyncThumbnailDrawable(
                                         mParentActivity.getResources(),
                                         thumbnail,
                                         task
@@ -483,6 +511,7 @@ public class ExpandableUploadListAdapter extends BaseExpandableListAdapter imple
      * @return              Text describing the status of the given upload.
      */
     private String getStatusText(OCUpload upload) {
+
         String status;
         switch (upload.getUploadStatus()) {
 
@@ -546,6 +575,18 @@ public class ExpandableUploadListAdapter extends BaseExpandableListAdapter imple
                             R.string.uploads_view_upload_status_service_interrupted
                         );
                         break;
+                    case SERVICE_UNAVAILABLE:
+                        status = mParentActivity.getString(R.string.service_unavailable);
+                        break;
+                    case QUOTA_EXCEEDED:
+                        status = mParentActivity.getString(R.string.failed_upload_quota_exceeded_text);
+                        break;
+                    case SSL_RECOVERABLE_PEER_UNVERIFIED:
+                        status =
+                            mParentActivity.getString(
+                                R.string.ssl_certificate_not_trusted
+                            );
+                        break;
                     case UNKNOWN:
                         status = mParentActivity.getString(
                             R.string.uploads_view_upload_status_unknown_fail
@@ -560,6 +601,21 @@ public class ExpandableUploadListAdapter extends BaseExpandableListAdapter imple
                     case UPLOADED:
                         // should not get here ; status should be UPLOAD_SUCCESS
                         status =  mParentActivity.getString(R.string.uploads_view_upload_status_succeeded);
+                        break;
+                    case SPECIFIC_FORBIDDEN:
+                        // We don't know the specific forbidden error message because it is not being
+                        // saved in uploads storage
+                        status = String.format(mParentActivity.getString(R.string.uploader_upload_forbidden));
+                        break;
+                    case SPECIFIC_SERVICE_UNAVAILABLE:
+                        // We don't know the specific unavailable service error message because
+                        // it is not being saved in uploads storage
+                        status = mParentActivity.getString(R.string.service_unavailable);
+                        break;
+                    case SPECIFIC_UNSUPPORTED_MEDIA_TYPE:
+                        // We don't know the specific unsupported media type error message because
+                        // it is not being saved in uploads storage
+                        status = mParentActivity.getString(R.string.uploads_view_unsupported_media_type);
                         break;
                     default:
                         status = "Naughty devs added a new fail result but no description for the user";
@@ -667,12 +723,19 @@ public class ExpandableUploadListAdapter extends BaseExpandableListAdapter imple
         listView.setGroupIndicator(null);
         UploadGroup group = (UploadGroup) getGroup(groupPosition);
         if (convertView == null) {
-            LayoutInflater inflaInflater = (LayoutInflater) mParentActivity
+            LayoutInflater inflater = (LayoutInflater) mParentActivity
                     .getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-            convertView = inflaInflater.inflate(R.layout.upload_list_group, null);
+            convertView = inflater.inflate(R.layout.upload_list_group, null);
         }
-        TextView tv = (TextView) convertView.findViewById(R.id.uploadListGroupName);
-        tv.setText(group.getGroupName());
+        TextView tvGroupName = (TextView) convertView.findViewById(R.id.uploadListGroupName);
+        TextView tvFileCount = (TextView) convertView.findViewById(R.id.textViewFileCount);
+
+        int stringResFileCount = group.getGroupCount() == 1 ? R.string.uploads_view_group_file_count_single :
+                R.string.uploads_view_group_file_count;
+        String fileCountText = String.format(mParentActivity.getString(stringResFileCount), group.getGroupCount());
+
+        tvGroupName.setText(group.getGroupName());
+        tvFileCount.setText(fileCountText);
         return convertView;
     }
 

@@ -2,7 +2,7 @@
  *   ownCloud Android client application
  *
  *   @author David A. Velasco
- *   Copyright (C) 2016 ownCloud Inc.
+ *   Copyright (C) 2016 ownCloud GmbH.
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License version 2,
@@ -26,6 +26,7 @@ import android.content.res.Resources;
 import com.owncloud.android.R;
 import com.owncloud.android.lib.common.operations.RemoteOperationResult;
 import com.owncloud.android.operations.RemoveFileOperation;
+import com.owncloud.android.ui.errorhandling.ErrorMessageAdapter;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;

@@ -5,7 +5,7 @@
  *   @author masensio
  *   @author David A. Velasco
  *   Copyright (C) 2011 Bartek Przybylski
- *   Copyright (C) 2015 ownCloud Inc.
+ *   Copyright (C) 2016 ownCloud GmbH.
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License version 2,
@@ -29,18 +29,20 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
+import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.view.KeyEvent;
 import android.view.View;
 import android.view.View.OnClickListener;
+import android.view.WindowManager;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
-import android.widget.Toast;
 
+import com.owncloud.android.BuildConfig;
 import com.owncloud.android.R;
 import com.owncloud.android.lib.common.utils.Log_OC;
 
@@ -87,8 +89,14 @@ public class PassCodeActivity extends AppCompatActivity {
      */
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        /// protection against screen recording
+        if (!BuildConfig.DEBUG) {
+            getWindow().addFlags(WindowManager.LayoutParams.FLAG_SECURE);
+        } // else, let it go, or taking screenshots & testing will not be possible
+
         setContentView(R.layout.passcodelock);
-        
+
         mBCancel = (Button) findViewById(R.id.cancel);
         mPassCodeHdr = (TextView) findViewById(R.id.header);
         mPassCodeHdrExplanation = (TextView) findViewById(R.id.explanation);
@@ -132,7 +140,7 @@ public class PassCodeActivity extends AppCompatActivity {
             setCancelButtonEnabled(true);
 
         } else {
-            throw new IllegalArgumentException("A valid ACTION is needed in the Intent passed to "
+            throw new IllegalArgumentException(R.string.illegal_argument_exception_message + " "
                     + TAG);
         }
 
@@ -167,13 +175,13 @@ public class PassCodeActivity extends AppCompatActivity {
      * Binds the appropiate listeners to the input boxes receiving each digit of the pass code.
      */
     protected void setTextListeners() {
-    
-         ///  First input field
+
+        ///  First input field
         mPassCodeEditTexts[0].addTextChangedListener(new PassCodeDigitTextWatcher(0, false));
 
 
         /*------------------------------------------------
-         *  SECOND BOX 
+         *  SECOND BOX
          -------------------------------------------------*/
         mPassCodeEditTexts[1].addTextChangedListener(new PassCodeDigitTextWatcher(1, false));
 
@@ -182,7 +190,7 @@ public class PassCodeActivity extends AppCompatActivity {
             @Override
             public boolean onKey(View v, int keyCode, KeyEvent event) {
                 if (keyCode == KeyEvent.KEYCODE_DEL && mBChange) {  // TODO WIP: event should be
-                // used to control what's exactly happening with DEL, not any custom field...
+                    // used to control what's exactly happening with DEL, not any custom field...
                     mPassCodeEditTexts[0].setText("");
                     mPassCodeEditTexts[0].requestFocus();
                     if (!mConfirmingPassCode)
@@ -202,14 +210,14 @@ public class PassCodeActivity extends AppCompatActivity {
             public void onFocusChange(View v, boolean hasFocus) {
                 /// TODO WIP: should take advantage of hasFocus to reduce processing
                 if (mPassCodeEditTexts[0].getText().toString().equals("")) {  // TODO WIP validation
-                // could be done in a global way, with a single OnFocusChangeListener for all the
-                // input fields
+                    // could be done in a global way, with a single OnFocusChangeListener for all the
+                    // input fields
                     mPassCodeEditTexts[0].requestFocus();
                 }
             }
         });
-        
-        
+
+
         /*------------------------------------------------
          *  THIRD BOX
          -------------------------------------------------*/
@@ -340,10 +348,10 @@ public class PassCodeActivity extends AppCompatActivity {
         View focusedView = getCurrentFocus();
         if (focusedView != null) {
             InputMethodManager inputMethodManager =
-                (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
+                    (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
             inputMethodManager.hideSoftInputFromWindow(
-                focusedView.getWindowToken(),
-                0
+                    focusedView.getWindowToken(),
+                    0
             );
         }
     }
@@ -352,7 +360,12 @@ public class PassCodeActivity extends AppCompatActivity {
                                      int explanationVisibility) {
         Arrays.fill(mPassCodeDigits, null);
         CharSequence errorSeq = getString(errorMessage);
-        Toast.makeText(this, errorSeq, Toast.LENGTH_LONG).show();
+        Snackbar snackbar = Snackbar.make(
+                findViewById(android.R.id.content),
+                errorSeq,
+                Snackbar.LENGTH_LONG
+        );
+        snackbar.show();
         mPassCodeHdr.setText(headerMessage);                // TODO check if really needed
         mPassCodeHdrExplanation.setVisibility(explanationVisibility); // TODO check if really needed
         clearBoxes();
@@ -377,7 +390,7 @@ public class PassCodeActivity extends AppCompatActivity {
      */
     protected boolean checkPassCode(){
         SharedPreferences appPrefs = PreferenceManager
-            .getDefaultSharedPreferences(getApplicationContext());
+                .getDefaultSharedPreferences(getApplicationContext());
 
         String savedPassCodeDigits[] = new String[4];
         savedPassCodeDigits[0] = appPrefs.getString(PREFERENCE_PASSCODE_D1, null);

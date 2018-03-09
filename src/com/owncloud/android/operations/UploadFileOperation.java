@@ -2,7 +2,7 @@
  *   ownCloud Android client application
  *
  *   @author David A. Velasco
- *   Copyright (C) 2016 ownCloud Inc.
+ *   Copyright (C) 2016 ownCloud GmbH.
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License version 2,
@@ -71,8 +71,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class UploadFileOperation extends SyncOperation {
 
     public static final int CREATED_BY_USER = 0;
-    public static final int CREATED_AS_INSTANT_PICTURE = 1;
-    public static final int CREATED_AS_INSTANT_VIDEO = 2;
+    public static final int CREATED_AS_CAMERA_UPLOAD_PICTURE = 1;
+    public static final int CREATED_AS_CAMERA_UPLOAD_VIDEO = 2;
 
     public static OCFile obtainNewOCFileToUpload(String remotePath, String localPath, String mimeType) {
 
@@ -173,7 +173,7 @@ public class UploadFileOperation extends SyncOperation {
         mOriginalStoragePath = mFile.getStoragePath();
         mContext = context;
         mOCUploadId = upload.getUploadId();
-        mCreatedBy = upload.getCreadtedBy();
+        mCreatedBy = upload.getCreatedBy();
         mRemoteFolderToBeCreated = upload.isCreateRemoteFolder();
     }
 
@@ -227,7 +227,7 @@ public class UploadFileOperation extends SyncOperation {
 
     public void setCreatedBy(int createdBy) {
         mCreatedBy = createdBy;
-        if (createdBy < CREATED_BY_USER || CREATED_AS_INSTANT_VIDEO < createdBy) {
+        if (createdBy < CREATED_BY_USER || CREATED_AS_CAMERA_UPLOAD_VIDEO < createdBy) {
             mCreatedBy = CREATED_BY_USER;
         }
     }
@@ -236,12 +236,12 @@ public class UploadFileOperation extends SyncOperation {
         return mCreatedBy;
     }
 
-    public boolean isInstantPicture() {
-        return mCreatedBy == CREATED_AS_INSTANT_PICTURE;
+    public boolean isCameraUploadsPicture() {
+        return mCreatedBy == CREATED_AS_CAMERA_UPLOAD_PICTURE;
     }
 
-    public boolean isInstantVideo() {
-        return mCreatedBy == CREATED_AS_INSTANT_VIDEO;
+    public boolean isCameraUploadsVideo() {
+        return mCreatedBy == CREATED_AS_CAMERA_UPLOAD_VIDEO;
     }
 
     public void setOCUploadId(long id){
@@ -309,6 +309,7 @@ public class UploadFileOperation extends SyncOperation {
             remoteParentPath = remoteParentPath.endsWith(OCFile.PATH_SEPARATOR) ?
                     remoteParentPath : remoteParentPath + OCFile.PATH_SEPARATOR;
             result = grantFolderExistence(remoteParentPath, client);
+
             if (!result.isSuccess()) {
 
                 return result;
@@ -356,15 +357,19 @@ public class UploadFileOperation extends SyncOperation {
                 throw new OperationCancelledException();
             }
 
+            // Get the last modification date of the file from the file system
+            Long timeStampLong = originalFile.lastModified()/1000;
+            String timeStamp = timeStampLong.toString();
+
             /// perform the upload
             if ( mChunked &&
                     (new File(mFile.getStoragePath())).length() >
                             ChunkedUploadRemoteFileOperation.CHUNK_SIZE ) {
                 mUploadOperation = new ChunkedUploadRemoteFileOperation(mFile.getStoragePath(),
-                        mFile.getRemotePath(), mFile.getMimetype(), mFile.getEtagInConflict());
+                        mFile.getRemotePath(), mFile.getMimetype(), mFile.getEtagInConflict(), timeStamp);
             } else {
                 mUploadOperation = new UploadRemoteFileOperation(mFile.getStoragePath(),
-                        mFile.getRemotePath(), mFile.getMimetype(), mFile.getEtagInConflict());
+                        mFile.getRemotePath(), mFile.getMimetype(), mFile.getEtagInConflict(), timeStamp);
             }
             Iterator <OnDatatransferProgressListener> listener = mDataTransferListeners.iterator();
             while (listener.hasNext()) {
@@ -454,14 +459,14 @@ public class UploadFileOperation extends SyncOperation {
      * @return      'True' if the upload was delayed until WiFi connectivity is available, 'false' otherwise.
      */
     private boolean delayForWifi() {
-        boolean delayInstantPicture = (
-            isInstantPicture() &&  PreferenceManager.instantPictureUploadViaWiFiOnly(mContext)
+        boolean delayCameraUploadsPicture = (
+            isCameraUploadsPicture() &&  PreferenceManager.cameraPictureUploadViaWiFiOnly(mContext)
         );
-        boolean delayInstantVideo = (
-            isInstantVideo() && PreferenceManager.instantVideoUploadViaWiFiOnly(mContext)
+        boolean delayCameraUploadsVideo = (
+            isCameraUploadsVideo() && PreferenceManager.cameraVideoUploadViaWiFiOnly(mContext)
         );
         return (
-            (delayInstantPicture || delayInstantVideo) &&
+            (delayCameraUploadsPicture || delayCameraUploadsVideo) &&
             !ConnectivityUtils.isAppConnectedViaWiFi(mContext)
         );
     }
@@ -479,7 +484,7 @@ public class UploadFileOperation extends SyncOperation {
      * will be uploaded.
      */
     private RemoteOperationResult grantFolderExistence(String pathToGrant, OwnCloudClient client) {
-        RemoteOperation operation = new ExistenceCheckRemoteOperation(pathToGrant, mContext, false);
+        RemoteOperation operation = new ExistenceCheckRemoteOperation(pathToGrant, false);
         RemoteOperationResult result = operation.execute(client);
         if (!result.isSuccess() && result.getCode() == ResultCode.FILE_NOT_FOUND && mRemoteFolderToBeCreated) {
             SyncOperation syncOp = new CreateFolderOperation(pathToGrant, true);
@@ -534,7 +539,7 @@ public class UploadFileOperation extends SyncOperation {
                 mFile.getModificationTimestampAtLastSyncForData()
         );
         newFile.setEtag(mFile.getEtag());
-        newFile.setFavorite(mFile.isFavorite());
+        newFile.setAvailableOfflineStatus(mFile.getAvailableOfflineStatus());
         newFile.setLastSyncDateForProperties(mFile.getLastSyncDateForProperties());
         newFile.setLastSyncDateForData(mFile.getLastSyncDateForData());
         newFile.setStoragePath(mFile.getStoragePath());
@@ -585,7 +590,7 @@ public class UploadFileOperation extends SyncOperation {
 
     private boolean existsFile(OwnCloudClient client, String remotePath){
         ExistenceCheckRemoteOperation existsOperation =
-                new ExistenceCheckRemoteOperation(remotePath, mContext, false);
+                new ExistenceCheckRemoteOperation(remotePath, false);
         RemoteOperationResult result = existsOperation.execute(client);
         return result.isSuccess();
     }

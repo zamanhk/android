@@ -2,7 +2,7 @@
  *   ownCloud Android client application
  *
  *   @author masensio
- *   Copyright (C) 2015 ownCloud Inc.
+ *   Copyright (C) 2016 ownCloud GmbH.
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License version 2,
@@ -71,7 +71,7 @@ public class GetSharesForFileOperation extends SyncOperation {
                 shares.add((OCShare) obj);
             }
 
-            getStorageManager().saveSharesDB(shares);
+            getStorageManager().saveShares(shares);
 
         } else if (result.getCode() == RemoteOperationResult.ResultCode.SHARE_NOT_FOUND) {
             // no share on the file - remove local shares
@@ -81,5 +81,4 @@ public class GetSharesForFileOperation extends SyncOperation {
 
         return result;
     }
-
 }

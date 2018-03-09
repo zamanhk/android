@@ -10,8 +10,6 @@
   <string name="actionbar_settings">নিয়ামকসমূহ</string>
   <string name="actionbar_see_details">বিস্তারিত</string>
   <string name="actionbar_send_file">পাঠাও</string>
-  <!--TODO re-enable when server-side folder size calculation is available   
-    	<item>Biggest - Smallest</item>-->
   <!--TODO re-enable when "Accounts" is available in Navigation Drawer-->
   <!--<string name="drawer_item_accounts">Accounts</string>-->
   <!--TODO re-enable when "On Device" is available
@@ -19,11 +17,8 @@
   <string name="drawer_open">খোল</string>
   <string name="prefs_category_general">সাধারণ</string>
   <string name="prefs_category_more">বেশী</string>
+  <string name="prefs_category_security">নিরাপত্তা</string>
   <string name="prefs_accounts">একাউন্ট</string>
-  <string name="prefs_instant_upload">দ্রুত ছবি আপলোড</string>
-  <string name="prefs_instant_upload_summary">ক্যামেরা থেকে তোলা ছবি তৎক্ষণাৎ আপলোড</string>
-  <string name="prefs_instant_video_upload">দ্রুত ভিডিও আপলোড</string>
-  <string name="prefs_instant_video_upload_summary">ক্যামেরায় রেকর্ড করা ভিডিও তৎক্ষণাৎ আপলোড</string>
   <string name="prefs_log_summary">সমস্যা তালিকাভুক্ত করার জায়গা</string>
   <string name="prefs_log_summary_history">রেকর্ডেড লগ এখানে দেখেন</string>
   <string name="prefs_help">সহায়িকা</string>
@@ -38,7 +33,6 @@
   <string name="sync_string_files">ফাইল</string>
   <string name="setup_btn_connect">সংযুক্ত হও</string>
   <string name="uploader_btn_upload_text">আপলোড</string>
-  <string name="uploader_top_message">আপলোডের ফোলডার পছনদ করেন</string>
   <string name="uploader_wrn_no_account_title">কোন একাউন্ট খুঁজে পাওয়া গেল না</string>
   <string name="uploader_wrn_no_account_setup_btn_text">সেট-আপ</string>
   <string name="uploader_wrn_no_account_quit_btn_text">বন্ধ</string>
@@ -61,6 +55,7 @@
   <string name="common_error">সমস্যা</string>
   <string name="common_loading">লোড চলছে....</string>
   <string name="common_error_unknown">অজানা জটিলতা</string>
+  <string name="common_pending">মুলতুবি</string>
   <string name="about_title">সমপরকে</string>
   <string name="change_password">কূটশব্দ পরিবর্তন করুন</string>
   <string name="create_account">একাউন্ট তেরী কর</string>
@@ -121,11 +116,8 @@
   <string name="auth_account_not_new">এই যন্ত্রে ইতোমধ্যে এই ব্যবহারকারী এবং সার্ভারের নামে একটি একাউন্ট রয়েছে</string>
   <string name="auth_account_not_the_same">এই একাউন্টের ব্যবহারকারীর সঙ্গে প্রদত্ত ব্যবহারকারী মেলেনা</string>
   <string name="auth_unknown_error_title">অজানা জটিলতা দেখা দিয়েছে</string>
-  <string name="auth_unknown_host_title">হোস্টকে খুঁজে পাওয়া যায়নি</string>
   <string name="auth_incorrect_path_title">সার্ভার ঊদাহরণ পাওয়া যায়নি</string>
-  <string name="auth_timeout_title">সার্ভার সাড়া দিতে অনেক দীর্ঘ সময় নিল</string>
   <string name="auth_ssl_general_error_title">SSL initialization ব্যার্থ</string>
-  <string name="auth_ssl_unverified_server_title">SSL server এর পরিচয় সুনিশ্চিত করা গেলনা</string>
   <string name="auth_bad_oc_version_title">অজানা সার্ভার সংষ্করণ</string>
   <string name="auth_wrong_connection_title">যোগাযোগ স্থাপন করা গেলনা</string>
   <string name="auth_secure_connection">নিরাপদ যোগাযোগ স্থাপিত হয়েছে</string>
@@ -140,9 +132,10 @@
 ⇥</string>
   <string name="common_rename">পূনঃনামকরণ</string>
   <string name="common_remove">অপসারণ</string>
-  <string name="confirmation_remove_alert">আপনি কি সত্যিই %1$s অপসারণ করতে চান?</string>
+  <string name="confirmation_remove_file_alert">আপনি কি সত্যিই %1$s অপসারণ করতে চান?</string>
   <string name="confirmation_remove_folder_alert">আপনি কি সত্যিই %1$s এবং এর কনটেন্ট অপসারণ করতে চান?</string>
   <string name="confirmation_remove_local">শুধুমাত্র লোকাল</string>
+  <string name="confirmation_remove_public_share_message">আপনি কি সত্যিই %1$s অপসারণ করতে চান?</string>
   <string name="remove_success_msg">অপসারণ সফল</string>
   <string name="remove_fail_msg">অপসারণ ব্যার্থ</string>
   <string name="rename_dialog_title">একটি নতুন নাম লিখুন</string>
@@ -158,8 +151,6 @@
   <string name="filedisplay_no_file_selected">কোন ফাইল নির্বাচন করা হয়নি</string>
   <string name="activity_chooser_title">লিঙ্ক পাঠান....</string>
   <string name="oauth_check_onoff">oAuth2 দিয়ে লগইন কর</string>
-  <string name="oauth_login_connection">oAuth2 সার্ভারে সংযোগের চেষ্টা চলছে....</string>
-  <string name="ssl_validator_header">সাইটটির পরিচয় সণাক্ত করা গেলনা</string>
   <string name="ssl_validator_reason_cert_not_trusted">- সার্ভার প্রত্যয়নপত্রটি বিশ্বাসযোগ্য নয়</string>
   <string name="ssl_validator_reason_cert_expired">- সার্ভার প্রত্যয়নপত্র বাতিল হয়ে গেছে</string>
   <string name="ssl_validator_reason_cert_not_yet_valid">- সার্ভার প্রত্যয়নপত্রটিতে উল্লেখিত বৈধতার তারিখ ভবিষ্যত এর জন্য প্রযোজ্য</string>
@@ -189,7 +180,6 @@
   <string name="placeholder_filesize">৩৮৯ কেবি</string>
   <string name="placeholder_timestamp">2012/05/18 12:23 PM</string>
   <string name="placeholder_media_time">12:23:45</string>
-  <string name="instant_upload_path">/তাৎক্ষণিক আপলোড</string>
   <string name="conflict_keep_both">উভয়কে রাখ</string>
   <string name="preview_image_description">ছবি প্রাকদর্শন</string>
   <string name="preview_image_error_unknown_format">ছবিটি প্রদর্শন করা যাবেনা</string>
@@ -203,10 +193,7 @@
   <string name="clipboard_text_copied">ক্লিপবোর্ডে কপি করা হলো</string>
   <string name="error_cant_bind_to_operations_service">জটিল ভ্রান্তি: কাজটি করা যাবেনা</string>
   <string name="network_error_socket_exception">সার্ভারে সংযোগ স্থাপনের সময় একটি ভ্রান্তি ঘটলো।</string>
-  <string name="network_error_socket_timeout_exception">সার্ভারের জন্য অপেক্ষা করার সময় একটি ভ্রান্তি ঘটলো, কাজটি করা যেতনা</string>
-  <string name="network_error_connect_timeout_exception">সার্ভারের জন্য অপেক্ষা করার সময় একটি ভ্রান্তি ঘটলো, কাজটি করা যেতনা</string>
-  <string name="network_host_not_available">কাজটি সম্পন্ন করা গেলনা, সার্ভার সংযোগ পাওয়া যাচ্ছেনা</string>
-  <string name="empty"></string>
+  <string name="network_error_socket_timeout_exception">সার্ভার সাড়া দিতে অনেক দীর্ঘ সময় নিল</string>
   <string name="forbidden_permissions">আপনার %s অনুমতি নেই </string>
   <string name="forbidden_permissions_rename">ফাইলটি পূনঃনামকরণ করতে</string>
   <string name="forbidden_permissions_delete">ফাইলটি মুছে ফেলতে</string>
@@ -225,10 +212,10 @@
   <string name="move_file_not_found">সরাতে ব্যার্থ হলো। ফাইলটি রয়েছে কিনা দেখুন।</string>
   <string name="prefs_category_details">বিস্তারিত</string>
   <string name="auth_host_address">সার্ভার ঠিকানা</string>
-  <string name="share_dialog_title">ভাগাভাগিরত</string>
-  <string name="share_via_link_section_title">লিংক ভাগাভাগি করেন</string>
-  <string name="share_via_link_expiration_date_label">মেয়াদোত্তীর্ণ হওয়ার তারিখ নির্ধারণ করুন</string>
-  <string name="share_via_link_password_label">কূটশব্দ সুরক্ষিত</string>
+  <string name="share_dialog_title">ভাগাভাগি কর</string>
+  <string name="share_cancel_public_link_button">বাতিল</string>
+  <string name="share_confirm_public_link_button">সংরক্ষণ</string>
+  <string name="share_via_link_password_label">কূটশব্দ</string>
   <string name="share_search">অনুসন্ধান</string>
   <string name="share_privilege_can_share">ভাগাভাগি করেত পারেন</string>
   <string name="share_privilege_can_edit">সম্পাদনা করতে পারবেন</string>

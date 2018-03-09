@@ -1,7 +1,7 @@
 /**
  *   ownCloud Android client application
  *
- *   Copyright (C) 2016 ownCloud Inc.
+ *   Copyright (C) 2016 ownCloud GmbH.
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License version 2,
@@ -26,6 +26,7 @@ import android.support.v4.app.FragmentManager;
 
 import com.owncloud.android.R;
 import com.owncloud.android.files.services.FileUploader;
+import com.owncloud.android.files.services.TransferRequester;
 import com.owncloud.android.lib.common.utils.Log_OC;
 import com.owncloud.android.operations.UploadFileOperation;
 import com.owncloud.android.ui.activity.FileActivity;
@@ -157,7 +158,7 @@ public class UriUploader {
      * @param remotePath    Absolute path in the current OC account to set to the uploaded file.
      */
     private void requestUpload(String localPath, String remotePath) {
-        FileUploader.UploadRequester requester = new FileUploader.UploadRequester();
+        TransferRequester requester = new TransferRequester();
         requester.uploadNewFile(
                 mActivity,
                 mAccount,
@@ -177,8 +178,7 @@ public class UriUploader {
      */
     private void copyThenUpload(Uri[] sourceUris, String[] remotePaths) {
         if (mShowWaitingDialog) {
-            mActivity.showLoadingDialog(mActivity.getResources().
-                    getString(R.string.wait_for_tmp_copy_from_private_storage));
+            mActivity.showLoadingDialog(R.string.wait_for_tmp_copy_from_private_storage);
         }
 
         CopyAndUploadContentUrisTask copyTask = new CopyAndUploadContentUrisTask

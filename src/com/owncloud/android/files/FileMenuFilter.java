@@ -2,7 +2,7 @@
  *   ownCloud Android client application
  *
  *   @author David A. Velasco
- *   Copyright (C) 2015 ownCloud Inc.
+ *   Copyright (C) 2016 ownCloud GmbH.
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License version 2,
@@ -22,19 +22,22 @@ package com.owncloud.android.files;
 
 import android.accounts.Account;
 import android.content.Context;
+import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentActivity;
 import android.view.Menu;
 import android.view.MenuItem;
 
 import com.owncloud.android.R;
 import com.owncloud.android.datamodel.OCFile;
-import com.owncloud.android.files.services.FileDownloader;
 import com.owncloud.android.files.services.FileDownloader.FileDownloaderBinder;
 import com.owncloud.android.files.services.FileUploader.FileUploaderBinder;
 import com.owncloud.android.lib.resources.status.OCCapability;
 import com.owncloud.android.services.OperationsService.OperationsServiceBinder;
 import com.owncloud.android.ui.activity.ComponentsGetter;
+import com.owncloud.android.ui.preview.PreviewVideoFragment;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -43,7 +46,10 @@ import java.util.List;
  */
 public class FileMenuFilter {
 
-    private OCFile mFile;
+    private static final int SINGLE_SELECT_ITEMS = 1;
+    private static final String TAG_SECOND_FRAGMENT = "SECOND_FRAGMENT";
+
+    private List<OCFile> mFiles;
     private ComponentsGetter mComponentsGetter;
     private Account mAccount;
     private Context mContext;
@@ -51,20 +57,31 @@ public class FileMenuFilter {
     /**
      * Constructor
      *
-     * @param targetFile        {@link OCFile} target of the action to filter in the {@link Menu}.
+     * @param targetFiles       List of {@link OCFile} file targets of the action to filter in the {@link Menu}.
      * @param account           ownCloud {@link Account} holding targetFile.
-     * @param cg                Accessor to app components, needed to access the
-     *                          {@link FileUploader} and {@link FileDownloader} services
+     * @param cg                Accessor to app components, needed to access synchronization services
      * @param context           Android {@link Context}, needed to access build setup resources.
      */
-    public FileMenuFilter(OCFile targetFile, Account account, ComponentsGetter cg,
+    public FileMenuFilter(List<OCFile> targetFiles, Account account, ComponentsGetter cg,
                           Context context) {
-        mFile = targetFile;
+        mFiles = targetFiles;
         mAccount = account;
         mComponentsGetter = cg;
         mContext = context;
     }
 
+    /**
+     * Constructor
+     *
+     * @param targetFile        {@link OCFile} target of the action to filter in the {@link Menu}.
+     * @param account           ownCloud {@link Account} holding targetFile.
+     * @param cg                Accessor to app components, needed to access synchronization services
+     * @param context           Android {@link Context}, needed to access build setup resources.
+     */
+    public FileMenuFilter(OCFile targetFile, Account account, ComponentsGetter cg,
+                          Context context) {
+        this(Arrays.asList(new OCFile[]{targetFile}), account, cg, context);
+    }
 
     /**
      * Filters out the file actions available in the passed {@link Menu} taken into account
@@ -73,26 +90,40 @@ public class FileMenuFilter {
      * @param menu              Options or context menu to filter.
      */
     public void filter(Menu menu) {
-        List<Integer> toShow = new ArrayList<Integer>();
-        List<Integer> toHide = new ArrayList<Integer>();
+        if (mFiles == null || mFiles.size() <= 0) {
+            hideAll(menu);
 
-        filter(toShow, toHide);
+        } else {
+            List<Integer> toShow = new ArrayList<>();
+            List<Integer> toHide = new ArrayList<>();
 
-        MenuItem item = null;
-        for (int i : toShow) {
-            item = menu.findItem(i);
-            if (item != null) {
-                item.setVisible(true);
-                item.setEnabled(true);
+            filter(toShow, toHide);
+
+            MenuItem item;
+            for (int i : toShow) {
+                item = menu.findItem(i);
+                if (item != null) {
+                    item.setVisible(true);
+                    item.setEnabled(true);
+                }
+            }
+
+            for (int i : toHide) {
+                item = menu.findItem(i);
+                if (item != null) {
+                    item.setVisible(false);
+                    item.setEnabled(false);
+                }
             }
         }
+    }
 
-        for (int i : toHide) {
-            item = menu.findItem(i);
-            if (item != null) {
-                item.setVisible(false);
-                item.setEnabled(false);
-            }
+    private void hideAll(Menu menu) {
+        MenuItem item;
+        for (int i=0; i<menu.size(); i++) {
+            item = menu.getItem(i);
+            item.setVisible(false);
+            item.setEnabled(false);
         }
     }
 
@@ -106,25 +137,17 @@ public class FileMenuFilter {
      * @param toHide            List to save the options that must be shown in the menu.
      */
     private void filter(List<Integer> toShow, List <Integer> toHide) {
-        boolean synchronizing = false;
-        if (mComponentsGetter != null && mFile != null && mAccount != null) {
-            OperationsServiceBinder opsBinder = mComponentsGetter.getOperationsServiceBinder();
-            FileUploaderBinder uploaderBinder = mComponentsGetter.getFileUploaderBinder();
-            FileDownloaderBinder downloaderBinder = mComponentsGetter.getFileDownloaderBinder();
-            synchronizing = (
-                // comparing local and remote
-                (opsBinder != null && opsBinder.isSynchronizing(mAccount, mFile.getRemotePath())) ||
-                // downloading
-                (downloaderBinder != null && downloaderBinder.isDownloading(mAccount, mFile)) ||
-                // uploading
-                (uploaderBinder != null && uploaderBinder.isUploading(mAccount, mFile))
-            );
-        }
+
+        boolean synchronizing = anyFileSynchronizing();
+
+        boolean videoPreviewing = anyFileVideoPreviewing();
+
+        boolean videoStreaming = !anyFileDown() && anyFileVideoPreviewing();
 
         /// decision is taken for each possible action on a file in the menu
 
         // DOWNLOAD 
-        if (mFile == null || mFile.isDown() || mFile.isFolder() || synchronizing) {
+        if (mFiles.isEmpty() || containsFolder() || anyFileDown() || synchronizing || videoPreviewing) {
             toHide.add(R.id.action_download_file);
 
         } else {
@@ -132,7 +155,7 @@ public class FileMenuFilter {
         }
 
         // RENAME
-        if (mFile == null || synchronizing) {
+        if (!isSingleSelection() || synchronizing || videoPreviewing) {
             toHide.add(R.id.action_rename_file);
 
         } else {
@@ -140,16 +163,17 @@ public class FileMenuFilter {
         }
 
         // MOVE & COPY
-        if (mFile == null || synchronizing) {
+        if (mFiles.isEmpty() || synchronizing || videoPreviewing) {
             toHide.add(R.id.action_move);
             toHide.add(R.id.action_copy);
+
         } else {
             toShow.add(R.id.action_move);
             toShow.add(R.id.action_copy);
         }
 
         // REMOVE
-        if (mFile == null || synchronizing) {
+        if (mFiles.isEmpty() || synchronizing) {
             toHide.add(R.id.action_remove_file);
 
         } else {
@@ -157,7 +181,7 @@ public class FileMenuFilter {
         }
 
         // OPEN WITH (different to preview!)
-        if (mFile == null || mFile.isFolder() || !mFile.isDown() || synchronizing) {
+        if (!isSingleFile() || !anyFileDown() || synchronizing) {
             toHide.add(R.id.action_open_file_with);
 
         } else {
@@ -165,7 +189,7 @@ public class FileMenuFilter {
         }
 
         // CANCEL SYNCHRONIZATION
-        if (mFile == null || !synchronizing) {
+        if (mFiles.isEmpty() || !synchronizing || anyFavorite()) {
             toHide.add(R.id.action_cancel_sync);
 
         } else {
@@ -173,7 +197,7 @@ public class FileMenuFilter {
         }
 
         // SYNC CONTENTS (BOTH FILE AND FOLDER)
-        if (mFile == null || (!mFile.isFolder() && !mFile.isDown()) || synchronizing) {
+        if (mFiles.isEmpty() || (!anyFileDown() && !containsFolder()) || synchronizing) {
             toHide.add(R.id.action_sync_file);
 
         } else {
@@ -191,14 +215,19 @@ public class FileMenuFilter {
                 (capability.getFilesSharingApiEnabled().isTrue() ||
                         capability.getFilesSharingApiEnabled().isUnknown()
                 );
-        if ((!shareViaLinkAllowed && !shareWithUsersAllowed) ||  mFile == null || !shareApiEnabled) {
+
+        boolean notAllowResharing = anyFileSharedWithMe() &&
+                capability != null && capability.getFilesSharingResharing().isFalse();
+
+        if ((!shareViaLinkAllowed && !shareWithUsersAllowed) || !isSingleSelection() ||
+                !shareApiEnabled || notAllowResharing) {
             toHide.add(R.id.action_share_file);
         } else {
             toShow.add(R.id.action_share_file);
         }
 
         // SEE DETAILS
-        if (mFile == null || mFile.isFolder()) {
+        if (!isSingleFile()) {
             toHide.add(R.id.action_see_details);
         } else {
             toShow.add(R.id.action_see_details);
@@ -207,26 +236,137 @@ public class FileMenuFilter {
         // SEND
         boolean sendAllowed = (mContext != null &&
                 mContext.getString(R.string.send_files_to_other_apps).equalsIgnoreCase("on"));
-        if (mFile == null || !sendAllowed || mFile.isFolder() || synchronizing) {
+        if (!isSingleFile() || !sendAllowed || synchronizing || videoStreaming) {
             toHide.add(R.id.action_send_file);
         } else {
             toShow.add(R.id.action_send_file);
         }
 
-        // FAVORITES
-        if (mFile == null || synchronizing || mFile.isFolder() || mFile.isFavorite()) {
-            toHide.add(R.id.action_favorite_file);
+        // SET AS AVAILABLE OFFLINE
+        if (synchronizing || !anyUnfavorite() || videoStreaming) {
+            toHide.add(R.id.action_set_available_offline);
         } else {
-            toShow.add(R.id.action_favorite_file);
+            toShow.add(R.id.action_set_available_offline);
         }
 
-        // UNFAVORITES
-        if (mFile == null || synchronizing || mFile.isFolder() || !mFile.isFavorite()) {
-            toHide.add(R.id.action_unfavorite_file);
+        // UNSET AS AVAILABLE OFFLINE
+        if (!anyFavorite() || videoStreaming) {
+            toHide.add(R.id.action_unset_available_offline);
         } else {
-            toShow.add(R.id.action_unfavorite_file);
+            toShow.add(R.id.action_unset_available_offline);
         }
 
     }
 
+    private boolean anyFileSynchronizing() {
+        boolean synchronizing = false;
+        if (mComponentsGetter != null && !mFiles.isEmpty() && mAccount != null) {
+            OperationsServiceBinder opsBinder = mComponentsGetter.getOperationsServiceBinder();
+            FileUploaderBinder uploaderBinder = mComponentsGetter.getFileUploaderBinder();
+            FileDownloaderBinder downloaderBinder = mComponentsGetter.getFileDownloaderBinder();
+            synchronizing = (
+                anyFileSynchronizing(opsBinder) ||      // comparing local and remote
+                anyFileDownloading(downloaderBinder) ||
+                anyFileUploading(uploaderBinder)
+            );
+        }
+        return synchronizing;
+    }
+
+    private boolean anyFileSynchronizing(OperationsServiceBinder opsBinder) {
+        boolean synchronizing = false;
+        if (opsBinder != null) {
+            for (int i=0; !synchronizing && i < mFiles.size(); i++) {
+                synchronizing = opsBinder.isSynchronizing(mAccount, mFiles.get(i));
+            }
+        }
+        return synchronizing;
+    }
+
+    private boolean anyFileDownloading(FileDownloaderBinder downloaderBinder) {
+        boolean downloading = false;
+        if (downloaderBinder != null) {
+            for (int i=0; !downloading && i < mFiles.size(); i++) {
+                downloading = downloaderBinder.isDownloading(mAccount, mFiles.get(i));
+            }
+        }
+        return downloading;
+    }
+
+    private boolean anyFileUploading(FileUploaderBinder uploaderBinder) {
+        boolean uploading = false;
+        if (uploaderBinder != null) {
+            for (int i=0; !uploading && i < mFiles.size(); i++) {
+                uploading = uploaderBinder.isUploading(mAccount, mFiles.get(i));
+            }
+        }
+        return uploading;
+    }
+
+    private boolean anyFileVideoPreviewing() {
+        final FragmentActivity activity = (FragmentActivity) mContext;
+        Fragment secondFragment = activity.getSupportFragmentManager().findFragmentByTag(
+                TAG_SECOND_FRAGMENT);
+        boolean videoPreviewing = false;
+        if (secondFragment instanceof PreviewVideoFragment) {
+            for (int i=0; !videoPreviewing && i < mFiles.size(); i++) {
+                videoPreviewing = ((PreviewVideoFragment) secondFragment).
+                        getFile().equals(mFiles.get(i));
+            }
+        };
+        return videoPreviewing;
+    }
+
+    private boolean isSingleSelection() {
+        return mFiles.size() == SINGLE_SELECT_ITEMS;
+    }
+
+    private boolean isSingleFile() {
+        return isSingleSelection() && !mFiles.get(0).isFolder();
+    }
+
+    private boolean containsFolder() {
+        for(OCFile file: mFiles) {
+            if(file.isFolder()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean anyFileDown() {
+        for(OCFile file: mFiles) {
+            if(file.isDown()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean anyFavorite() {
+        for(OCFile file: mFiles) {
+            if(file.getAvailableOfflineStatus() == OCFile.AvailableOfflineStatus.AVAILABLE_OFFLINE) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean anyUnfavorite() {
+        for(OCFile file: mFiles) {
+            if(file.getAvailableOfflineStatus() == OCFile.AvailableOfflineStatus.NOT_AVAILABLE_OFFLINE) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean anyFileSharedWithMe() {
+        for(OCFile file: mFiles) {
+            if(file.isSharedWithMe()) {
+                return true;
+            }
+        }
+        return false;
+    }
 }

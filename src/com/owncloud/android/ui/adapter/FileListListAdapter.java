@@ -6,33 +6,40 @@
  * @author David A. Velasco
  * @author masensio
  * Copyright (C) 2011  Bartek Przybylski
- * Copyright (C) 2016 ownCloud Inc.
- * <p/>
+ * Copyright (C) 2016 ownCloud GmbH.
+ * <p>
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
  * as published by the Free Software Foundation.
- * <p/>
+ * <p>
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * <p/>
+ * <p>
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 package com.owncloud.android.ui.adapter;
 
 
+import java.util.ArrayList;
+import java.util.Vector;
+
 import android.accounts.Account;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
+import android.graphics.Color;
+import android.util.SparseBooleanArray;
 import android.preference.PreferenceManager;
 import android.support.v7.widget.RecyclerView;
 import android.text.format.DateUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AbsListView;
+import android.widget.ImageView;
 
 import com.owncloud.android.R;
 import com.owncloud.android.authentication.AccountUtils;
@@ -42,6 +49,7 @@ import com.owncloud.android.datamodel.ThumbnailsCacheManager;
 import com.owncloud.android.files.services.FileDownloader.FileDownloaderBinder;
 import com.owncloud.android.files.services.FileUploader.FileUploaderBinder;
 import com.owncloud.android.services.OperationsService.OperationsServiceBinder;
+import com.owncloud.android.ui.activity.ComponentsGetter;
 import com.owncloud.android.ui.fragment.FileFragment;
 import com.owncloud.android.ui.fragment.OCFileListFragment;
 import com.owncloud.android.utils.DisplayUtils;
@@ -51,56 +59,60 @@ import com.owncloud.android.utils.MimetypeIconUtil;
 import java.util.Vector;
 
 /**
- * Changes made by Denis Dijak on 25.4.2016
- */
-
-/**
  * This Adapter populates a ListView with all files and folders in an ownCloud
  * instance.
  */
 public class FileListListAdapter extends RecyclerView.Adapter<RecyclerViewHolder> {
 
     private Context mContext;
-    private OCFile mFile = null;
-    private Vector<OCFile> mFiles = new Vector<>();
-    private Vector<OCFile> mFilesOrig = new Vector<>();
+    private Vector<OCFile> mFiles = null;
     private boolean mJustFolders;
 
     private FileDataStorageManager mStorageManager;
     private OCFileListFragment mOCFileListFragment;
     private boolean mGridMode;
-
     private Account mAccount;
+    private ComponentsGetter mTransferServiceGetter;
     private FileFragment.ContainerActivity mContainerActivity;
-    private SharedPreferences mAppPreferences;
     private String mFooterText;
+
 
     private static final int TYPE_LIST = 0;
     private static final int TYPE_GRID = 1;
     private static final int TYPE_GRID_IMAGE = 2;
     protected static final int TYPE_FOOTER = 3;
 
-    public FileListListAdapter(Context mContext, OCFileListFragment mOCFileListFragment, FileFragment.ContainerActivity mContainerActivity) {
+    private SharedPreferences mAppPreferences;
 
-        setHasStableIds(true);
+    public FileListListAdapter(
+            boolean justFolders,
+            Context context,
+            ComponentsGetter transferServiceGetter,
+            FileFragment.ContainerActivity mContainerActivity
+            ) {
 
-
-        this.mContext = mContext;
-        this.mOCFileListFragment = mOCFileListFragment;
         this.mContainerActivity = mContainerActivity;
-
+        mJustFolders = justFolders;
+        mContext = context;
         mAccount = AccountUtils.getCurrentOwnCloudAccount(mContext);
-        mAppPreferences = PreferenceManager.getDefaultSharedPreferences(mContext);
+        mAppPreferences = android.preference.PreferenceManager.getDefaultSharedPreferences(mContext);
+
+        mTransferServiceGetter = transferServiceGetter;
 
         // Read sorting order, default to sort by name ascending
-        FileStorageUtils.mSortOrder = mAppPreferences.getInt("sortOrder", 0);
-        FileStorageUtils.mSortAscending = mAppPreferences.getBoolean("sortAscending", true);
-
+        FileStorageUtils.mSortOrder = com.owncloud.android.db.PreferenceManager.getSortOrder(mContext);
+        FileStorageUtils.mSortAscending = com.owncloud.android.db.PreferenceManager.getSortAscending(mContext);
+        
         // initialise thumbnails cache on background thread
         new ThumbnailsCacheManager.InitDiskCacheTask().execute();
 
         mGridMode = false;
         mFooterText = null;
+    }
+
+    @Override
+    public boolean areAllItemsEnabled() {
+        return true;
     }
 
     public Object getItem(int position) {
@@ -222,9 +234,13 @@ public class FileListListAdapter extends RecyclerView.Adapter<RecyclerViewHolder
                 }
 
                 // local state
-                FileDownloaderBinder downloaderBinder = mContainerActivity.getFileDownloaderBinder();
-                FileUploaderBinder uploaderBinder = mContainerActivity.getFileUploaderBinder();
-                OperationsServiceBinder opsBinder = mContainerActivity.getOperationsServiceBinder();
+                holder.localStateView.bringToFront();
+                FileDownloaderBinder downloaderBinder =
+                        mTransferServiceGetter.getFileDownloaderBinder();
+                FileUploaderBinder uploaderBinder =
+                        mTransferServiceGetter.getFileUploaderBinder();
+                OperationsServiceBinder opsBinder =
+                        mTransferServiceGetter.getOperationsServiceBinder();
 
                 holder.localStateView.setVisibility(View.INVISIBLE);   // default first
 
@@ -254,7 +270,7 @@ public class FileListListAdapter extends RecyclerView.Adapter<RecyclerViewHolder
 
                 // this if-else is needed even though favorite icon is visible by default
                 // because android reuses views in listview
-                if (!file.isFavorite()) {
+                if (!file.isAvailableOffline()) {
                     holder.favoriteIcon.setVisibility(View.GONE);
                 } else {
                     holder.favoriteIcon.setVisibility(View.VISIBLE);
@@ -274,7 +290,7 @@ public class FileListListAdapter extends RecyclerView.Adapter<RecyclerViewHolder
                             holder.fileIcon.setImageBitmap(thumbnail);
                         } else {
                             // generate new Thumbnail
-                            if (ThumbnailsCacheManager.cancelPotentialWork(file, holder.fileIcon)) {
+                            if (ThumbnailsCacheManager.cancelPotentialThumbnailWork(file, holder.fileIcon)) {
                                 final ThumbnailsCacheManager.ThumbnailGenerationTask task =
                                         new ThumbnailsCacheManager.ThumbnailGenerationTask(
                                                 holder.fileIcon, mStorageManager, mAccount
@@ -282,8 +298,8 @@ public class FileListListAdapter extends RecyclerView.Adapter<RecyclerViewHolder
                                 if (thumbnail == null) {
                                     thumbnail = ThumbnailsCacheManager.mDefaultImg;
                                 }
-                                final ThumbnailsCacheManager.AsyncDrawable asyncDrawable =
-                                        new ThumbnailsCacheManager.AsyncDrawable(
+                                final ThumbnailsCacheManager.AsyncThumbnailDrawable asyncDrawable =
+                                        new ThumbnailsCacheManager.AsyncThumbnailDrawable(
                                                 mContext.getResources(),
                                                 thumbnail,
                                                 task
@@ -326,20 +342,22 @@ public class FileListListAdapter extends RecyclerView.Adapter<RecyclerViewHolder
 
     /**
      * Change the adapted directory for a new one
-     * @param directory                 New file to adapt. Can be NULL, meaning
-     *                                  "no content to adapt".
-     * @param updatedStorageManager     Optional updated storage manager; used to replace
-     *                                  mStorageManager if is different (and not NULL)
+     *
+     * @param folder                New folder to adapt. Can be NULL, meaning
+     *                              "no content to adapt".
+     * @param updatedStorageManager Optional updated storage manager; used to replace
+     *                              mStorageManager if is different (and not NULL)
      */
-    public void swapDirectory(OCFile directory, FileDataStorageManager updatedStorageManager
+    public void swapDirectory(OCFile folder, FileDataStorageManager updatedStorageManager
             /*, boolean onlyOnDevice*/) {
-        mFile = directory;
         if (updatedStorageManager != null && updatedStorageManager != mStorageManager) {
             mStorageManager = updatedStorageManager;
             mAccount = AccountUtils.getCurrentOwnCloudAccount(mContext);
         }
         if (mStorageManager != null) {
             // TODO Enable when "On Device" is recovered ?
+            mFiles = mStorageManager.getFolderContent(folder/*, onlyOnDevice*/);
+
             mFiles = mStorageManager.getFolderContent(mFile/*, onlyOnDevice*/);
             mFilesOrig.clear();
             mFilesOrig.addAll(mFiles);
@@ -355,15 +373,15 @@ public class FileListListAdapter extends RecyclerView.Adapter<RecyclerViewHolder
         notifyDataSetChanged();
     }
 
-
     /**
      * Filter for getting only the folders
-     * @param files
-     * @return Vector<OCFile>
+     *
+     * @param files             Collection of files to filter
+     * @return                  Folders in the input
      */
     public Vector<OCFile> getFolders(Vector<OCFile> files) {
-        Vector<OCFile> ret = new Vector<OCFile>();
-        OCFile current = null;
+        Vector<OCFile> ret = new Vector<>();
+        OCFile current;
         for (int i = 0; i < files.size(); i++) {
             current = files.get(i);
             if (current.isFolder()) {
@@ -374,21 +392,18 @@ public class FileListListAdapter extends RecyclerView.Adapter<RecyclerViewHolder
     }
 
     public void setSortOrder(Integer order, boolean ascending) {
-        SharedPreferences.Editor editor = mAppPreferences.edit();
-        editor.putInt("sortOrder", order);
-        editor.putBoolean("sortAscending", ascending);
-        editor.commit();
 
+        com.owncloud.android.db.PreferenceManager.setSortOrder(order, mContext);
+        com.owncloud.android.db.PreferenceManager.setSortAscending(ascending, mContext);
+        
         FileStorageUtils.mSortOrder = order;
         FileStorageUtils.mSortAscending = ascending;
 
-
         mFiles = FileStorageUtils.sortFolder(mFiles);
         notifyDataSetChanged();
-
     }
-
-    private CharSequence showRelativeTimestamp(OCFile file) {
+    
+    private CharSequence showRelativeTimestamp(OCFile file){
         return DisplayUtils.getRelativeDateTimeString(mContext, file.getModificationTimestamp(),
                 DateUtils.SECOND_IN_MILLIS, DateUtils.WEEK_IN_MILLIS, 0);
     }
@@ -409,5 +424,20 @@ public class FileListListAdapter extends RecyclerView.Adapter<RecyclerViewHolder
     private String getFooterText()
     {
         return mFooterText;
+    }
+
+    public ArrayList<OCFile> getCheckedItems(AbsListView parentList) {
+        SparseBooleanArray checkedPositions = parentList.getCheckedItemPositions();
+        ArrayList<OCFile> files = new ArrayList<>();
+        Object item;
+        for (int i=0; i < checkedPositions.size(); i++) {
+            if (checkedPositions.valueAt(i)) {
+                item = getItem(checkedPositions.keyAt(i));
+                if (item != null) {
+                    files.add((OCFile)item);
+                }
+            }
+        }
+        return files;
     }
 }

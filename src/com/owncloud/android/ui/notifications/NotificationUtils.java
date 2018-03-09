@@ -1,7 +1,7 @@
 /**
  *   ownCloud Android client application
  *
- *   Copyright (C) 2015 ownCloud Inc.
+ *   Copyright (C) 2016 ownCloud GmbH.
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License version 2,
@@ -19,8 +19,6 @@
 
 package com.owncloud.android.ui.notifications;
 
-import java.util.Random;
-
 import android.app.NotificationManager;
 import android.content.Context;
 import android.os.Handler;
@@ -29,6 +27,8 @@ import android.os.Process;
 import android.support.v4.app.NotificationCompat;
 
 import com.owncloud.android.R;
+
+import java.util.Random;
 
 public class NotificationUtils {
 
@@ -52,7 +52,6 @@ public class NotificationUtils {
             setColor(context.getResources().getColor(R.color.primary));
     }
 
-
     public static void cancelWithDelay(
             final NotificationManager notificationManager,
             final int notificationId,
@@ -72,6 +71,4 @@ public class NotificationUtils {
         }, delayInMillis); 
     
     }
-    
-
 }

@@ -3,7 +3,7 @@
   ownCloud Android client application
 
   @author David A. Velasco
-  Copyright (C) 2015 ownCloud Inc.
+  Copyright (C) 2016 ownCloud GmbH.
 
   This program is free software: you can redistribute it and/or modify
   it under the terms of the GNU General Public License version 2,
@@ -17,12 +17,15 @@
   You should have received a copy of the GNU General Public License
   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 -->
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
-            xmlns:tools="http://schemas.android.com/tools"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            tools:context="com.owncloud.android.ui.fragment.EditShareFragment"
-            android:id="@+id/shareScroll">
+<ScrollView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context="com.owncloud.android.ui.fragment.EditShareFragment"
+    android:id="@+id/shareScroll"
+    android:filterTouchesWhenObscured="true"
+    >
 
     <LinearLayout android:orientation="vertical"
                   android:layout_width="match_parent"
@@ -38,10 +41,12 @@
             android:ellipsize="middle"
             />
 
+        <!-- for some reason the divider below is determining the width for the fragment;
+             so, leave it there, even if it's height is 0dp, we don't really want to see it -->
         <View
             android:id="@+id/share_header_divider"
             android:layout_width="match_parent"
-            android:layout_height="2dp"
+            android:layout_height="0dp"
             android:background="@color/owncloud_blue"
             />
     <LinearLayout

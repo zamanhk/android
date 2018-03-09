@@ -2,7 +2,7 @@
  *   ownCloud Android client application
  *
  *   Copyright (C) 2012  Bartek Przybylski
- *   Copyright (C) 2016 ownCloud Inc.
+ *   Copyright (C) 2016 ownCloud GmbH.
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License version 2,
@@ -26,11 +26,14 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.net.Uri;
 import android.preference.PreferenceManager;
+import android.support.annotation.Nullable;
 
 import com.owncloud.android.MainApp;
+import com.owncloud.android.datamodel.FileDataStorageManager;
 import com.owncloud.android.lib.common.accounts.AccountTypeUtils;
 import com.owncloud.android.lib.common.accounts.AccountUtils.Constants;
 import com.owncloud.android.lib.common.utils.Log_OC;
+import com.owncloud.android.lib.resources.status.OCCapability;
 import com.owncloud.android.lib.resources.status.OwnCloudVersion;
 
 import java.util.Locale;
@@ -42,7 +45,6 @@ public class AccountUtils {
     public static final String WEBDAV_PATH_4_0_AND_LATER = "/remote.php/webdav";
     private static final String ODAV_PATH = "/remote.php/odav";
     private static final String SAML_SSO_PATH = "/remote.php/webdav";
-    public static final String STATUS_PATH = "/status.php";
 
     public static final int ACCOUNT_VERSION = 1;
 
@@ -56,8 +58,7 @@ public class AccountUtils {
      *                      account). If none is available and valid, returns null.
      */
     public static Account getCurrentOwnCloudAccount(Context context) {
-        Account[] ocAccounts = AccountManager.get(context).getAccountsByType(
-                MainApp.getAccountType());
+        Account[] ocAccounts = getAccounts(context);
         Account defaultAccount = null;
 
         SharedPreferences appPreferences = PreferenceManager
@@ -83,10 +84,14 @@ public class AccountUtils {
         return defaultAccount;
     }
 
+    public static Account[] getAccounts(Context context) {
+        AccountManager accountManager = AccountManager.get(context);
+        return accountManager.getAccountsByType(MainApp.getAccountType());
+    }
+
     
     public static boolean exists(Account account, Context context) {
-        Account[] ocAccounts = AccountManager.get(context).getAccountsByType(
-                MainApp.getAccountType());
+        Account[] ocAccounts = getAccounts(context);
 
         if (account != null && account.name != null) {
             int lastAtPos = account.name.lastIndexOf("@");
@@ -106,6 +111,20 @@ public class AccountUtils {
             }
         }
         return false;
+    }
+
+    /**
+     * returns the user's name based on the account name.
+     *
+     * @param accountName the account name
+     * @return the user's name
+     */
+    public static String getUsernameOfAccount(String accountName) {
+        if (accountName != null) {
+            return accountName.substring(0, accountName.lastIndexOf("@"));
+        } else {
+            return null;
+        }
     }
     
     /**
@@ -128,10 +147,8 @@ public class AccountUtils {
     public static boolean setCurrentOwnCloudAccount(Context context, String accountName) {
         boolean result = false;
         if (accountName != null) {
-            Account[] ocAccounts = AccountManager.get(context).getAccountsByType(
-                    MainApp.getAccountType());
             boolean found;
-            for (Account account : ocAccounts) {
+            for (Account account : getAccounts(context)) {
                 found = (account.name.equals(accountName));
                 if (found) {
                     SharedPreferences.Editor appPrefs = PreferenceManager
@@ -294,27 +311,29 @@ public class AccountUtils {
      * @return              Version of the OC server corresponding to account, according to the data saved
      *                      in the system AccountManager
      */
+    @Nullable
     public static OwnCloudVersion getServerVersion(Account account) {
         OwnCloudVersion serverVersion = null;
         if (account != null) {
-            AccountManager accountMgr = AccountManager.get(MainApp.getAppContext());
-            String serverVersionStr = accountMgr.getUserData(account, Constants.KEY_OC_VERSION);
-            if (serverVersionStr != null) {
-                serverVersion = new OwnCloudVersion(serverVersionStr);
+            // capabilities are now the preferred source for version info
+            FileDataStorageManager fileDataStorageManager = new FileDataStorageManager(
+                account,
+                MainApp.getAppContext().getContentResolver()
+            );
+            OCCapability capability = fileDataStorageManager.getCapability(account.name);
+            if (capability != null) {
+                serverVersion = new OwnCloudVersion(capability.getVersionString());
+
+            } else {
+                // legacy: AccountManager as source of version info
+                AccountManager accountMgr = AccountManager.get(MainApp.getAppContext());
+                String serverVersionStr = accountMgr.getUserData(account, Constants.KEY_OC_VERSION);
+                if (serverVersionStr != null) {
+                    serverVersion = new OwnCloudVersion(serverVersionStr);
+                }
             }
         }
         return serverVersion;
     }
 
-    public static boolean hasSearchUsersSupport(Account account){
-        OwnCloudVersion serverVersion = null;
-        if (account != null) {
-            AccountManager accountMgr = AccountManager.get(MainApp.getAppContext());
-            String serverVersionStr = accountMgr.getUserData(account, Constants.KEY_OC_VERSION);
-            if (serverVersionStr != null) {
-                serverVersion = new OwnCloudVersion(serverVersionStr);
-            }
-        }
-        return (serverVersion != null ? serverVersion.isSearchUsersSupported() : false);
-    }
 }

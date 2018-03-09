@@ -4,7 +4,7 @@
  *   @author masensio
  *   @author Juan Carlos González Cabrero
  *   @author David A. Velasco
- *   Copyright (C) 2016 ownCloud Inc.
+ *   Copyright (C) 2016 ownCloud GmbH.
  *
  *   This program is free software: you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License version 2,
@@ -29,7 +29,7 @@ import android.os.AsyncTask;
 import android.widget.Toast;
 
 import com.owncloud.android.R;
-import com.owncloud.android.files.services.FileUploader;
+import com.owncloud.android.files.services.TransferRequester;
 import com.owncloud.android.lib.common.operations.RemoteOperationResult.ResultCode;
 import com.owncloud.android.lib.common.utils.Log_OC;
 import com.owncloud.android.operations.UploadFileOperation;
@@ -222,7 +222,7 @@ public class CopyAndUploadContentUrisTask extends AsyncTask<Object, Void, Result
     }
 
     private void requestUpload(Account account, String localPath, String remotePath, int behaviour, String mimeType) {
-        FileUploader.UploadRequester requester = new FileUploader.UploadRequester();
+        TransferRequester requester = new TransferRequester();
         requester.uploadNewFile(
             mAppContext,
             account,
