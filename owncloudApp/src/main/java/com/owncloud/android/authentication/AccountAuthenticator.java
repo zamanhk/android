@@ -6,16 +6,16 @@
  * @author David González Verdugo
  * Copyright (C) 2012  Bartek Przybylski
  * Copyright (C) 2020 ownCloud GmbH.
- *
+ * <p>
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2,
  * as published by the Free Software Foundation.
- *
+ * <p>
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- *
+ * <p>
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
@@ -37,10 +37,12 @@ import android.widget.Toast;
 import com.owncloud.android.MainApp;
 import com.owncloud.android.R;
 import com.owncloud.android.authentication.oauth.AuthStateManager;
+import com.owncloud.android.authentication.oauth.OAuthConnectionBuilder;
 import com.owncloud.android.authentication.oauth.OAuthUtils;
+import com.owncloud.android.lib.common.SingleSessionManager;
 import com.owncloud.android.lib.common.accounts.AccountTypeUtils;
 import com.owncloud.android.lib.common.accounts.AccountUtils;
-import com.owncloud.android.authentication.oauth.OAuthConnectionBuilder;
+import com.owncloud.android.lib.common.authentication.OwnCloudBearerCredentials;
 import com.owncloud.android.presentation.ui.authentication.AuthenticatorConstants;
 import com.owncloud.android.presentation.ui.authentication.LoginActivity;
 import net.openid.appauth.AppAuthConfiguration;
@@ -59,7 +61,7 @@ import static com.owncloud.android.presentation.ui.authentication.AuthenticatorC
 
 /**
  * Authenticator for ownCloud accounts.
- *
+ * <p>
  * Controller class accessed from the system AccountManager, providing integration of ownCloud accounts with the
  * Android system.
  */
@@ -339,7 +341,6 @@ public class AccountAuthenticator extends AbstractAccountAuthenticator {
             );
         }
 
-
         String scope = accountManager.getUserData(
                 account,
                 KEY_OAUTH2_SCOPE
@@ -389,6 +390,10 @@ public class AccountAuthenticator extends AbstractAccountAuthenticator {
                                 account,
                                 KEY_OAUTH2_REFRESH_TOKEN,
                                 refreshTokenToUseFromNowOn
+                        );
+
+                        SingleSessionManager.getDefaultSingleton().refreshCredentialsForAccount(
+                                account.name, new OwnCloudBearerCredentials(account.name, newAccessToken)
                         );
 
                     } else if (authorizationException != null) {
