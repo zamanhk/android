@@ -37,7 +37,8 @@ data class OCFile(
     val etag: String? = null,
     val permissions: String? = null,
     val remoteId: String? = null,
-    val privateLink: String? = null
+    val privateLink: String? = null,
+    val storagePath: String? = null
 ) : Parcelable {
 
     /**

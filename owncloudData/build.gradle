@@ -63,6 +63,12 @@ dependencies {
     // Kotlin
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlinVersion"
 
+    // WorkManager
+    implementation "androidx.work:work-runtime-ktx:$workManagerVersion"
+
+    // Koin dependency injector
+    implementation "org.koin:koin-core:$koinVersion"
+
     // Room
     implementation "androidx.room:room-runtime:$roomVersion"
     kapt "androidx.room:room-compiler:$roomVersion"

@@ -42,6 +42,7 @@ import com.owncloud.android.dependecyinjection.remoteDataSourceModule
 import com.owncloud.android.dependecyinjection.repositoryModule
 import com.owncloud.android.dependecyinjection.useCaseModule
 import com.owncloud.android.dependecyinjection.viewModelModule
+import com.owncloud.android.dependecyinjection.workerModule
 import com.owncloud.android.lib.common.OwnCloudClient
 import com.owncloud.android.lib.common.SingleSessionManager
 import com.owncloud.android.lib.common.utils.LoggingHelper
@@ -258,7 +259,8 @@ class MainApp : MultiDexApplication() {
                         useCaseModule,
                         repositoryModule,
                         localDataSourceModule,
-                        remoteDataSourceModule
+                        remoteDataSourceModule,
+                        workerModule
                     )
                 )
             }
