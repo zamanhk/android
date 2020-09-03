@@ -22,6 +22,8 @@ package com.owncloud.android.presentation.viewmodels.sharing
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MediatorLiveData
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.owncloud.android.domain.files.usecases.RefreshFolderFromServerAsyncUseCase
 import com.owncloud.android.domain.sharing.shares.model.OCShare
 import com.owncloud.android.domain.sharing.shares.model.ShareType
 import com.owncloud.android.domain.sharing.shares.usecases.CreatePrivateShareAsyncUseCase
@@ -37,6 +39,8 @@ import com.owncloud.android.extensions.ViewModelExt.runUseCaseWithResult
 import com.owncloud.android.extensions.ViewModelExt.runUseCaseWithResultAndUseCachedData
 import com.owncloud.android.presentation.UIResult
 import com.owncloud.android.providers.CoroutinesDispatcherProvider
+import kotlinx.coroutines.launch
+import timber.log.Timber
 
 /**
  * View Model to keep a reference to the share repository and an up-to-date list of a shares
@@ -52,6 +56,7 @@ class OCShareViewModel(
     private val createPublicShareUseCase: CreatePublicShareAsyncUseCase,
     private val editPublicShareUseCase: EditPublicShareAsyncUseCase,
     private val deletePublicShareUseCase: DeleteShareAsyncUseCase,
+    refreshFolderFromServerAsyncUseCase: RefreshFolderFromServerAsyncUseCase,
     private val coroutineDispatcherProvider: CoroutinesDispatcherProvider
 ) : ViewModel() {
 
@@ -66,6 +71,13 @@ class OCShareViewModel(
         _shares.addSource(sharesLiveData) { shares ->
             _shares.postValue(Event(UIResult.Success(shares)))
         }
+
+            viewModelScope.launch(coroutineDispatcherProvider.io) {
+
+                val useCaseResult = refreshFolderFromServerAsyncUseCase.execute(RefreshFolderFromServerAsyncUseCase.Params("/"))
+
+                Timber.d("Use case executed: ${refreshFolderFromServerAsyncUseCase.javaClass.simpleName} with result: $useCaseResult")
+            }
 
         refreshSharesFromNetwork()
     }

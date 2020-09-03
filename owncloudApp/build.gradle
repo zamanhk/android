@@ -60,6 +60,9 @@ dependencies {
         exclude group: "com.android.support"
     }
 
+    debugImplementation 'com.amitshekhar.android:debug-db:1.0.6'
+
+
     //Zooming Android ImageView.
     implementation 'com.github.chrisbanes:PhotoView:2.1.4'
 

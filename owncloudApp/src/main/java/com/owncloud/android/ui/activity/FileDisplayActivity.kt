@@ -52,6 +52,9 @@ import android.view.View
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.localbroadcastmanager.content.LocalBroadcastManager
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.WorkManager
+import androidx.work.workDataOf
 import com.google.android.material.snackbar.Snackbar
 import com.owncloud.android.AppRater
 import com.owncloud.android.MainApp
@@ -59,6 +62,7 @@ import com.owncloud.android.R
 import com.owncloud.android.authentication.BiometricManager
 import com.owncloud.android.authentication.PassCodeManager
 import com.owncloud.android.authentication.PatternManager
+import com.owncloud.android.usecases.DownloadFileWorker
 import com.owncloud.android.datamodel.FileDataStorageManager
 import com.owncloud.android.datamodel.OCFile
 import com.owncloud.android.db.PreferenceManager
@@ -508,6 +512,14 @@ class FileDisplayActivity : FileActivity(), FileFragment.ContainerActivity, OnEn
             }
             R.id.action_sync_account -> {
                 startSynchronization()
+                for(i in 1..50){
+                    val inputData = workDataOf(
+                        DownloadFileWorker.KEY_PARAM_ACCOUNT to account.name,
+                        DownloadFileWorker.KEY_PARAM_FILE_ID to i.toLong()
+                    )
+                    val downloadFileWorker = OneTimeWorkRequestBuilder<DownloadFileWorker>().setInputData(inputData).build()
+                    WorkManager.getInstance(applicationContext).enqueue(downloadFileWorker)
+                }
             }
             android.R.id.home -> {
                 val second = secondFragment

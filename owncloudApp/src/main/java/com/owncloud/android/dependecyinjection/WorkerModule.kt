@@ -20,12 +20,12 @@
 package com.owncloud.android.dependecyinjection
 
 import androidx.work.WorkerParameters
-import com.owncloud.android.data.files.workers.DownloadFileWorker
+import com.owncloud.android.usecases.DownloadFileWorker
 import org.koin.android.ext.koin.androidContext
 import org.koin.dsl.module
 
 val workerModule = module {
     factory { (downloadFileWorkerParams: WorkerParameters) ->
-        DownloadFileWorker(androidContext(), get(), downloadFileWorkerParams)
+        DownloadFileWorker(androidContext(), downloadFileWorkerParams)
     }
 }

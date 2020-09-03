@@ -22,6 +22,7 @@
 package com.owncloud.android
 
 import android.app.Activity
+import android.app.NotificationManager
 import android.content.Context
 import android.content.pm.PackageInfo
 import android.content.pm.PackageManager
@@ -43,6 +44,7 @@ import com.owncloud.android.dependecyinjection.repositoryModule
 import com.owncloud.android.dependecyinjection.useCaseModule
 import com.owncloud.android.dependecyinjection.viewModelModule
 import com.owncloud.android.dependecyinjection.workerModule
+import com.owncloud.android.extensions.createNotificationChannel
 import com.owncloud.android.lib.common.OwnCloudClient
 import com.owncloud.android.lib.common.SingleSessionManager
 import com.owncloud.android.lib.common.utils.LoggingHelper
@@ -50,6 +52,7 @@ import com.owncloud.android.ui.activity.BiometricActivity
 import com.owncloud.android.ui.activity.PassCodeActivity
 import com.owncloud.android.ui.activity.PatternLockActivity
 import com.owncloud.android.ui.activity.WhatsNewActivity
+import com.owncloud.android.utils.NOTIFICATION_CHANNEL_ID_DOWNLOADS
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.context.startKoin
 import org.koin.core.context.stopKoin
@@ -74,6 +77,8 @@ class MainApp : MultiDexApplication() {
         OwnCloudClient.setContext(appContext)
 
         SingleSessionManager.setUserAgent(userAgent)
+
+        createNotificationChannels()
 
         // initialise thumbnails cache on background thread
         ThumbnailsCacheManager.InitDiskCacheTask().execute()
@@ -169,6 +174,20 @@ class MainApp : MultiDexApplication() {
             )
             Timber.d("${BuildConfig.BUILD_TYPE} start logging ${BuildConfig.VERSION_NAME} ${BuildConfig.COMMIT_SHA1}")
         }
+    }
+
+    private fun createNotificationChannels() {
+        // Channels available since Oreo
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
+            return
+        }
+
+        createNotificationChannel(
+            channelId = NOTIFICATION_CHANNEL_ID_DOWNLOADS,
+            channelName = getString(R.string.download_notification_channel_name),
+            channelDescription = getString(R.string.download_notification_channel_description),
+            channelImportance = NotificationManager.IMPORTANCE_LOW
+        )
     }
 
     companion object {

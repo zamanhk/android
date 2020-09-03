@@ -17,12 +17,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.owncloud.android.data.files.datasources
+package com.owncloud.android.utils
 
-import com.owncloud.android.domain.files.model.OCFile
-
-interface LocalFileDataSource {
-    fun getFile(id: Long): OCFile?
-    fun saveFilesInFolder(listOfFiles: List<OCFile>, folder: OCFile)
-    fun saveFile(ocFile: OCFile)
-}
+// Channel Ids
+const val NOTIFICATION_CHANNEL_ID_DOWNLOADS = "NOTIFICATION_CHANNEL_DOWNLOADS"

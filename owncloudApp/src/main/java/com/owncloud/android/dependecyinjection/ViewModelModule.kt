@@ -35,7 +35,7 @@ val viewModelModule = module {
     }
 
     viewModel { (filePath: String, accountName: String) ->
-        OCShareViewModel(filePath, accountName, get(), get(), get(), get(), get(), get(), get(), get(), get())
+        OCShareViewModel(filePath, accountName, get(), get(), get(), get(), get(), get(), get(), get(), get(), get())
     }
 
     viewModel { OCAuthenticationViewModel(get(), get(), get(), get(), get(), get()) }
