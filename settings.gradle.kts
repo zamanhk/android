@@ -1,0 +1,7 @@
+include(
+    ":owncloudApp",
+    ":owncloudDomain",
+    ":owncloudData",
+    ":owncloud-android-library:owncloudComLibrary",
+    ":owncloudTestUtil"
+)
