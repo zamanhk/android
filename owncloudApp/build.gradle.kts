@@ -27,8 +27,7 @@ plugins {
     id("kotlin-android-extensions")
 }
 
-//def commitSHA1 = 'COMMIT_SHA1'
-//def gitRemote = 'GIT_REMOTE'
+val commitSHA1 = "COMMIT_SHA1"
 
 dependencies {
     // Data and domain modules
@@ -106,7 +105,7 @@ dependencies {
         exclude(module = "objenesis")
     }
     androidTestImplementation("com.github.tmurakami:dexopener:2.0.4")
-    androidTestImplementation("androidx.test:runner:1.2.0")
+    androidTestImplementation("androidx.test:runner:1.3.0")
 }
 
 //tasks.withType(Test) {
@@ -132,9 +131,8 @@ android {
 
         versionCode = 21500200
         versionName = "2.15.2"
-//
-//        buildConfigField "String", gitRemote, "\"" + getGitOriginRemote() + "\""
-//        buildConfigField "String", commitSHA1, "\"" + getLatestGitHash() + "\""
+
+        buildConfigField("String", commitSHA1, "\"${getLatestGitHash()}\"")
 
         multiDexEnabled = true
 
@@ -252,15 +250,16 @@ android {
 //    }
 //}
 //
-//static def getLatestGitHash() {
-//    def process = "git rev-parse --short HEAD".execute()
-//    return process.text.toString().trim()
-//}
-//
-//static def getGitOriginRemote() {
-//    def process = "git remote -v".execute()
-//    def values = process.text.toString().trim().split("\\r\\n|\\n|\\r")
-//
-//    def found = values.find { it.startsWith("origin") && it.endsWith("(push)") }
-//    return found.replace("origin", "").replace("(push)", "").replace(".git", "").trim()
-//}
+fun getLatestGitHash(): String = "git rev-parse --short HEAD".runCommand()
+
+fun String.runCommand(workingDir: File = file("./")): String {
+    val parts = this.split("\\s".toRegex())
+    val process = ProcessBuilder(*parts.toTypedArray())
+        .directory(workingDir)
+        .redirectOutput(ProcessBuilder.Redirect.PIPE)
+        .redirectError(ProcessBuilder.Redirect.PIPE)
+        .start()
+
+    process.waitFor(1, TimeUnit.MINUTES)
+    return process.inputStream.bufferedReader().readText().trim()
+}
