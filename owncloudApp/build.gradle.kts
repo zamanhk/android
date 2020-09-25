@@ -170,12 +170,12 @@ android {
 
     signingConfigs {
         create("release") {
-//           if (System.env.OC_RELEASE_KEYSTORE) {
-//                storeFile file(System.env.OC_RELEASE_KEYSTORE)  // use an absolute path
-//                storePassword System.env.OC_RELEASE_KEYSTORE_PASSWORD
-//                keyAlias System.env.OC_RELEASE_KEY_ALIAS
-//                keyPassword System.env.OC_RELEASE_KEY_PASSWORD
-//            }
+            //if (System.getenv("OC_RELEASE_KEYSTORE") != null) {
+            storeFile = file(System.getenv("OC_RELEASE_KEYSTORE"))  // use an absolute path
+            storePassword = System.getenv("OC_RELEASE_KEYSTORE_PASSWORD")
+            keyAlias = System.getenv("OC_RELEASE_KEY_ALIAS")
+            keyPassword = System.getenv("OC_RELEASE_KEY_PASSWORD")
+            //}
         }
     }
 
@@ -191,10 +191,16 @@ android {
         }
     }
 
-//    applicationVariants.all { variant ->
-//        def appName = System.env.OC_APP_NAME
-//        setOutputFileName(variant, appName, project)
-//    }
+    applicationVariants.all { variant ->
+        val appName = System.getenv("OC_APP_NAME")
+        setOutputFileName(
+            variant,
+            appName,
+            project
+        )
+        true
+
+    }
 
     testOptions {
         unitTests.isReturnDefaultValues = true
@@ -212,44 +218,44 @@ android {
 //                          project.archivesBaseName property will be used instead.
 // @param callerProject     Caller project.
 //
-//def setOutputFileName(variant, appName, callerProject) {
-//    logger.info("Setting new name for output of variant $variant.name")
-//
-//    def originalFile = variant.outputs[0].outputFile
-//    def originalName = originalFile.name
-//    println "originalName is $originalName"
-//
-//    def newName = ""
-//
-//    if (appName) {
-//        newName += appName
-//    } else {
-//        newName += "owncloud"
-//    }
-//
-//    def versionName = "$variant.mergedFlavor.versionName"
+fun setOutputFileName(
+    variant: com.android.build.gradle.api.ApplicationVariant,
+    appName: String,
+    callerProject: Project
+) {
+    logger.info("Setting new name for output of variant $variant.name")
+
+//    val originalFile = variant.outputs[0].outputFile
+//    val originalName = originalFile.name
+//    println("originalName is $originalName")
+
+    var newName = if (appName.isNotBlank()) {
+        appName
+    } else {
+        "owncloud"
+    }
+
+    var versionName = "${variant.mergedFlavor.versionName}"
 //    if (variant.mergedFlavor.manifestPlaceholders.versionName != null) {
 //        versionName = "$variant.mergedFlavor.manifestPlaceholders.versionName"
 //    }
 //    if (variant.buildType.manifestPlaceholders.versionName != null) {
 //        versionName = "$variant.buildType.manifestPlaceholders.versionName"
 //    }
-//    newName += "_$versionName"
-//
-//    def buildNumber = System.env.OC_BUILD_NUMBER
-//    if (buildNumber) {
-//        newName += ".$buildNumber"
-//    }
-//
-//    newName += originalName.substring(callerProject.archivesBaseName.length())
-//
-//    println "$variant.name: newName is $newName"
-//
-//    variant.outputs.all {
-//        outputFileName = new File(".", newName)
-//    }
-//}
-//
+    newName += "_$versionName"
+
+    val buildNumber = System.getenv("OC_BUILD_NUMBER")
+    if (buildNumber != null) {
+        newName += ".$buildNumber"
+    }
+
+//newName += originalName.substring(callerProject.archivesBaseName.length())
+
+    println("${variant.name}: newName is $newName")
+
+    //variant.outputFileName = File(".", newName).name
+}
+
 fun getLatestGitHash(): String = "git rev-parse --short HEAD".runCommand()
 
 fun String.runCommand(workingDir: File = file("./")): String {
