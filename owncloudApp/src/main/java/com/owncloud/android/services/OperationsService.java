@@ -183,7 +183,6 @@ public class OperationsService extends Service {
     public void onDestroy() {
         Timber.v("Destroying service");
         // Saving cookies
-        SingleSessionManager.getDefaultSingleton().saveAllClients(this, MainApp.Companion.getAccountType());
 
         mUndispatchedFinishedOperations.clear();
 
